@@ -1,0 +1,3469 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>病梅館記 | The Sick Plum</title>
+    <style>
+        body {
+        margin: 0;
+        padding: 0;
+        background-color: #e0d8c8;
+        overflow: hidden;
+        user-select: none;
+                font-family: 'Songti TC', 'Noto Serif TC', 'SimSun', serif; 
+        transition: filter 3s ease;
+        /* ★ 刪除 display: flex; 和 flex-direction: column; ★ */
+        width: 100vw;
+        height: 100vh;
+    }
+
+
+
+    /* 修改 app-container：確保是橫向 (Row) 排列 */
+    #app-container {
+        display: flex;
+        flex-direction: row; /* ★ 關鍵：強制左右排列 ★ */
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+/* ★ 新增：預設隱藏，等劇情跑完才淡入 */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 2s ease;
+    }
+
+ /* 1. 左側面板大框架 */
+        #left-panel {
+            width: 50%;            
+            height: 100%;          
+            background: #2b2522;   
+            border-right: 3px solid #5e2b24;
+            display: flex;
+            flex-direction: column; /* 告訴系統裡面的東西要「上下排列」 */
+            position: relative;
+            z-index: 10;
+            padding: 0;
+        }
+
+        /* 2. 上半部：顧客視角區 */
+        #customer-view {
+            flex: 0 0 50%;         /* 強制佔據 50% 的高度 */
+            width: 100%;
+            background: #4a403a;   /* 暫時用深灰色示意 */
+            border-bottom: 4px solid #5e2b24; /* 中間的分界線 */
+        }
+
+        /* 3. 下半部：對話區 */
+        #dialogue-section {
+            flex: 1;               /* 自動填滿剩下的空間 (約 45%) */
+            width: 100%;
+            background: #f4efe6;   /* 暫時用米白色紙張底色示意 */
+        }
+
+
+        /* ========================================= */
+        /* 對話區 (病歷紙) 樣式設計                  */
+        /* ========================================= */
+        /* 1. 病歷紙的質感底框 */
+        .record-paper {
+            width: 100%; height: 100%;
+            border: 1px solid #c0b0a0; padding: 20px;
+            position: relative;
+            background: linear-gradient(to bottom, #f4efe6 95%, #e0d8c8 100%);
+            box-shadow: inset 0 0 30px rgba(94, 43, 36, 0.1);
+            box-sizing: border-box;
+        }
+
+    
+        /* 3. 訪客稱謂標題列 */
+        .customer-title {
+            font-size: 24px; color: #5e2b24; font-weight: bold;
+            border-bottom: 2px solid #8a3324;
+            padding-bottom: 10px; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        /* [訪客] 的紅色小標籤 */
+        .title-tag {
+            background: #8a3324; color: #fff; font-size: 12px;
+            padding: 2px 6px; border-radius: 2px;
+            writing-mode: horizontal-tb; /* 確保標籤是橫向的 */
+        }
+
+        /* 4. 對話內容主體 */
+        .dialogue-content {
+            font-size: 18px; line-height: 1.6; color: #2b2522;
+            flex-grow: 1; /* 自動撐開，把按鈕往下擠 */
+            margin-bottom: 20px; padding-right: 20px;
+        }
+
+        /* 5. 選擇按鈕排版與設計 */
+        .dialogue-options {
+            display: flex; gap: 15px; justify-content: flex-start;
+        }
+
+        .story-btn {
+            flex: 1; padding: 10px; cursor: pointer;
+            border: 1px solid #5e2b24; background: transparent;
+            text-align: left; transition: all 0.2s; font-family: inherit;
+        }
+        
+        /* 滑鼠移過去時按鈕會微微浮起 */
+        .story-btn:hover {
+            background: rgba(94, 43, 36, 0.05); transform: translateY(-2px);
+        }
+        
+        /* 接受按鈕特別給予紅色邊框強調 */
+        .story-btn.accept { border-color: #8a3324; }
+        .story-btn.accept:hover { background: rgba(138, 51, 36, 0.1); }
+        
+        /* 按鈕內的主標題與副標題 (代價預告) */
+        .story-btn .btn-main {
+            display: block; font-size: 18px; font-weight: bold;
+            color: #5e2b24; margin-bottom: 4px;
+        }
+        .story-btn .btn-sub {
+            display: block; font-size: 12px; color: #888;
+        }
+
+/* ========================================= */
+        /* ★ 新增：開始醫治按鈕的專屬呼吸特效        */
+        /* ========================================= */
+        @keyframes pulseStartBtn {
+            0% { box-shadow: 0 0 0 0 rgba(138, 51, 36, 0.6); }
+            70% { box-shadow: 0 0 0 12px rgba(138, 51, 36, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(138, 51, 36, 0); }
+        }
+
+        #btn-start-treat {
+            background-color: #8a3324 !important; /* 深紅底色 */
+            border: 2px solid #5e2b24 !important;
+            animation: pulseStartBtn 1.5s infinite; /* 啟動呼吸燈 */
+            transform: scale(1.02); /* 稍微放大一點點 */
+        }
+        
+        #btn-start-treat .btn-main { color: #f4efe6 !important; } /* 白字 */
+        #btn-start-treat .btn-sub { color: #eaddcf !important; opacity: 0.9; }
+
+/* ========================================= */
+        /* 數值增減的漂浮動畫                        */
+        /* ========================================= */
+        @keyframes floatUpAndFade {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-30px) scale(1.2); }
+        }
+        .floating-text {
+            position: absolute;
+            font-weight: bold;
+            font-size: 20px;
+            pointer-events: none; /* 避免擋住滑鼠點擊 */
+            z-index: 9999;
+            animation: floatUpAndFade 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+        }
+/* ========================================= */
+        /* 聊天對話區 樣式設計                       */
+        /* ========================================= */
+        
+       /* 聊天區容器 */
+        .chat-container {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            gap: 15px; overflow-y: auto;
+            padding-right: 5px;
+            padding-top: 15px;    /* ★ 新增：讓第一句往下推，不要貼齊邊界 */
+            padding-bottom: 20px; /* ★ 新增：讓底部也留一點呼吸空間 */
+        }
+
+        /* 隱藏捲軸但保留滾動功能 (讓畫面更乾淨) */
+        .chat-container::-webkit-scrollbar { width: 0px; }
+
+       /* 單句對話的橫向容器 */
+        .chat-msg {
+            display: none; /* ★ 關鍵：這裡必須改成 none，讓未出現的對話預設隱藏 */
+            width: 100%;
+        }
+
+        /* ★ 新增：當加上 show 類別時，顯示並觸發彈出動畫 */
+        .chat-msg.show {
+            display: flex;
+            animation: popMessage 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+
+        /* 彈出動畫效果 */
+        @keyframes popMessage {
+            0% { opacity: 0; transform: translateY(15px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .chat-msg.guest { justify-content: flex-start; }
+        .chat-msg.player { justify-content: flex-end; }
+
+        /* 對話氣泡 */
+        .msg-bubble {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 18px;
+            font-size: 16px; line-height: 1.5;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        /* 客人氣泡：淺色底、深色字、左上角方正(模擬尾巴) */
+        .chat-msg.guest .msg-bubble {
+            background: #eaddcf; color: #5e2b24;
+            border: 1px solid #d4c4b4;
+            border-top-left-radius: 4px; 
+        }
+        
+        /* 玩家氣泡：紅色底、淺色字、右上角方正 */
+        .chat-msg.player .msg-bubble {
+            background: #8a3324; color: #f4efe6;
+            border-top-right-radius: 4px;
+        }
+
+        /* 前往病歷的切換按鈕 (實線、直角) */
+        .next-step-btn {
+            margin-top: auto; 
+            align-self: center;
+            background: transparent;
+            border: 2px solid #5e2b24; /* ★ 改為實線 */
+            color: #8a3324;
+            padding: 8px 20px; 
+            border-radius: 0px;        /* ★ 改為直角方框 */
+            cursor: pointer; font-family: inherit; font-size: 14px;
+            transition: all 0.2s; margin-bottom: 10px;
+        }
+        .next-step-btn:hover {
+            background: rgba(138, 51, 36, 0.1);
+        }
+    /* 右側面板 */
+    #right-panel {
+        width: 50%;
+        height: 100%; /* 確保填滿高度 */
+        background-color: #e0d8c8;
+        position: relative;
+        overflow: hidden;
+        cursor: none;
+    }
+
+        /* 紙張紋理疊加 */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            mix-blend-mode: multiply;
+        }
+
+        /* 左側操作按鈕 */
+        #controls-left {
+            position: absolute;
+            bottom: 20%; 
+            left: 60px; 
+            display: flex;
+            flex-direction: column; 
+            gap: 15px;
+            z-index: 100;
+            transition: opacity 1s;
+        }
+
+        /* 右側交付按鈕 */
+        #controls-right {
+            position: absolute;
+            bottom: 20%; 
+            right: 60px; 
+            display: flex;
+            flex-direction: column; 
+            gap: 15px;
+            z-index: 100;
+            transition: opacity 1s;
+        }
+        
+        /* ========================================= */
+        /* 樹木死亡時的介面特效                      */
+        /* ========================================= */
+        /* 1. 右側面板變成黑白 (梅樹失去生命力) */
+        body.dead #right-panel {
+            filter: grayscale(100%);
+            transition: filter 2s ease; /* 兩秒內緩緩褪色 */
+        }
+
+        /* 讓整個網頁 (包含左右面板) 緩緩褪去色彩 */
+        body.player-dead {
+            filter: grayscale(100%) brightness(0.6); /* 變灰且變暗 */
+            transition: filter 2.5s ease;
+        }
+        
+        /* 2. 下方工具列反灰且無法點擊 */
+        body.dead #toolbar {
+            opacity: 0.4;
+            pointer-events: none; /* 封鎖所有按鈕點擊 */
+            filter: grayscale(100%);
+            transition: all 1.5s ease;
+        }
+        .btn {
+            background: transparent;
+            border: 2px solid #8a3324; 
+            color: #5e2b24;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 18px;
+            letter-spacing: 4px;
+            writing-mode: vertical-rl; 
+            cursor: none; 
+            transition: all 0.3s ease;
+            outline: none;
+            opacity: 0.7;
+            background-color: rgba(224, 216, 200, 0.5);
+        }
+
+        .btn:hover {
+            opacity: 1;
+            background: rgba(138, 51, 36, 0.1);
+            border-color: #5e2b24;
+        }
+        
+        .btn.active {
+            background: #8a3324; 
+            color: #e0d8c8;
+            border-color: #5e2b24;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            opacity: 1;
+        }
+
+        #btn-submit {
+            border-color: #3d4a3e; 
+            color: #2b332b;
+        }
+        #btn-submit:hover {
+            background: rgba(61, 74, 62, 0.1);
+        }
+
+/* ========================================= */
+        /* 梅樹畫布 動畫與隱藏狀態設定               */
+        /* ========================================= */
+        .canvas-hidden {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+        .anim-place {
+            animation: placeBonsai 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            pointer-events: auto;
+        }
+        .anim-take {
+            animation: takeBonsai 0.8s cubic-bezier(0.5, 0, 0.8, 0.2) forwards;
+            pointer-events: none;
+        }
+        @keyframes placeBonsai {
+            0% { opacity: 0; transform: translate(-100px, -50px) scale(1.1); }
+            100% { opacity: 1; transform: translate(0, 0) scale(1); }
+        }
+        @keyframes takeBonsai {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(-100px, -50px) scale(1.1); }
+        }
+
+        /* --- 修正：自定義游標 --- */
+        #custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none; 
+            z-index: 100000;
+            display: none; /* ★ 改為預設隱藏，進遊戲才打開 */
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #1a1a1a;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #1a1a1a; /* 彎曲預設為黑色 */
+            border-radius: 50%;
+            opacity: 0.9;
+            transform: translate(-50%, -50%); /* 讓點的中心對齊滑鼠 */
+        }
+        
+        .cursor-qi {
+            width: 8px;
+            height: 8px;
+            background-color: #8a1c1c; /* 運氣為紅色 */
+            border-radius: 50%;
+            opacity: 0.9;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 統一設定 SVG 圖標的對齊 */
+        .cursor-icon svg { 
+            width: 36px; 
+            height: 36px; 
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); 
+            /* 讓 SVG 圖示的特定位置對齊滑鼠 */
+        }
+        
+        .cursor-cut svg {
+            stroke: #8a1c1c; 
+            stroke-width: 2; 
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            /* 調整旋轉與偏移，讓剪刀尖端對準滑鼠點 */
+            transform: translate(-20%, -20%) rotate(-45deg); 
+        }
+        
+        .cursor-brush svg { 
+            stroke: #3d8a3d; 
+            fill: none; 
+            stroke-width: 2; 
+            transform: translate(-10%, -10%) rotate(-45deg); 
+        }
+
+        .cursor-medicine svg {
+            width: 28px;
+            height: 28px;
+            stroke: #c5a059;
+            stroke-width: 3;
+            stroke-linecap: round;
+            fill: none;
+            transform: translate(-50%, -50%); /* 十字架置中對齊 */
+        }
+
+        .shake-anim {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, -1px, 0); }
+            20%, 80% { transform: translate3d(3px, 2px, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, -3px, 0); }
+            40%, 60% { transform: translate3d(5px, 3px, 0); }
+        }
+
+/* 封面、結局與中繼畫面樣式 */
+        #cover-screen, #ending-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: #1a1a1a; /* 封面預設黑底 */
+            z-index: 1000;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s;
+        }
+        
+        /* 封面樣式 */
+        #cover-screen {
+            flex-direction: column;
+            color: #eaddcf;
+            font-family: 'SimSun', serif; /* 回歸宋體，增加古風 */
+        }
+        
+        /* 結局畫面樣式 */
+        #ending-screen {
+            background-color: rgba(10, 5, 2, 0.95); /* 結束時更暗 */
+            display: none; 
+            opacity: 0;
+        }
+        
+       /* ★ 修改：中繼畫面樣式 (確保文字與按鈕置底) */
+        #intermediate-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: #1a1a1a; 
+            z-index: 1000;
+            display: none; 
+            flex-direction: column; /* ★ 關鍵：讓元素垂直排列，這樣 flex-end 才會是在下方 */
+            justify-content: flex-end; /* ★ 推到最下方 */
+            align-items: center;
+            padding-bottom: 12vh; /* ★ 距離底部的完美距離 */
+            transition: opacity 2s ease;
+            opacity: 0;
+        }
+
+        /* ★ 新增：打字機文字樣式 */
+        .typing-text {
+            color: #2b2522; /* ★ 改為深褐色/黑色 */
+            font-size: 28px;
+            letter-spacing: 4px;
+            line-height: 1.8;
+            font-weight: normal; 
+            text-shadow: 1px 1px 5px rgba(255, 255, 255, 0.7); /* ★ 加一點白色光暈確保在暗色背景也清晰 */
+            margin-bottom: 20px;
+            min-height: 1.8em; 
+        }
+
+/* ========================================= */
+        /* 舊版封面專屬樣式                          */
+        /* ========================================= */
+        .title-main {
+            font-size: 80px;
+            font-weight: bold; /* ★ 新增：粗體字 */
+            color: #8a3324;
+            letter-spacing: 20px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+        }
+        .title-sub {
+            font-size: 22px;
+            color: #a38040;
+            letter-spacing: 8px;
+            margin-bottom: 60px;
+        }
+        .start-btn {
+            background: transparent;
+            border: 2px solid #c5a059; /* ★ 改為暗黃色/金色邊框 */
+            color: #c5a059;            /* ★ 改為黃色字體 */
+            padding: 15px 60px;
+            font-size: 24px;
+            letter-spacing: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        
+        /* 滑鼠移上去時微微發光 */
+        .start-btn:hover {
+            background: rgba(197, 160, 89, 0.2); 
+            color: #fff;
+            box-shadow: 0 0 15px rgba(197, 160, 89, 0.8); 
+        }
+        
+        /* ★ 新增：滑鼠按下去的瞬間強烈發光！ */
+        .start-btn:active {
+            background: #c5a059; 
+            color: #fff;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1); /* 金黃色爆發光芒 */
+            transform: scale(0.98); /* 按下去微微縮小增加打擊感 */
+        }
+        /* --- 前導劇情專屬 --- */
+        #intro-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: #1a1a1a; /* ★ 黑色底 */
+            z-index: 1000;
+            display: none; 
+            justify-content: center; /* ★ 垂直置中 */
+            align-items: center;     /* ★ 水平置中 */
+            opacity: 0;
+            color: #eaddcf;          /* ★ 字體顏色 */
+        }
+        .intro-text {
+            position: absolute;
+            font-size: 26px;
+            letter-spacing: 6px;
+            line-height: 2;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 2s ease; /* 緩緩浮現與消失 */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+</head>
+<body>
+    <div id="cover-screen">
+        <div class="title-main">病梅館記</div>
+        <div class="title-sub">The Sick Plum</div>
+        <button class="start-btn" onclick="startGame()">開館</button>
+    </div>
+
+    <div id="intro-screen">
+        <div class="intro-text" id="intro-1">世人皆以梅之曲、欹、疏為美。</div>
+        <div class="intro-text" id="intro-2">斫其正，養其旁條；刪其密，夭其稚枝...</div>
+        <div class="intro-text" id="intro-3">天下之梅，皆病矣。</div>
+        
+    </div>
+
+<div id="intermediate-screen" style="background: url('背景.PNG') center center / cover no-repeat; background-color: #1a1a1a;">       
+    <div style="position: relative; text-align: center; width: 100%;">
+        <div id="typewriter-text" class="typing-text"></div>
+        
+        <button id="enter-game-btn" class="next-step-btn" style="display: inline-block; margin-top: 20px; font-size: 18px; padding: 12px 40px; background: #eaddcf; width: auto; opacity: 0; transition: opacity 1s; pointer-events: none;" onclick="showGameFromIntermediate()">進入病梅館 ➜</button>
+    </div>
+</div>
+
+<div id="ending-screen" style="display: none; opacity: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #151210; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: #eaddcf; transition: opacity 2s ease; text-align: center;">
+        <div id="ending-title" style="font-size: 50px; color: #8a3324; margin-bottom: 30px; letter-spacing: 10px;">- 結局標題 -</div>
+        <div id="ending-desc" style="font-size: 22px; line-height: 2; color: #d4c4b4; letter-spacing: 2px;">結局描述</div>
+        
+        <button onclick="location.reload()" style="margin-top: 60px; background: transparent; border: 1px solid #c5a059; color: #c5a059; padding: 12px 40px; font-size: 18px; cursor: pointer; letter-spacing: 6px; transition: 0.3s;">重新輪迴</button>
+    </div>
+
+    <div id="app-container">
+        
+        <div id="left-panel">
+            <div id="customer-view">
+                <div class="scene-placeholder" style="position: relative; background: url('背景.PNG') center 95% / cover no-repeat; width: 100%; height: 100%;">
+                    
+                    <img id="customer-image" src="" alt="Customer" style="
+                        display: none; 
+                        position: absolute; top: 0; left: 0;
+                        width: 100%; 
+                        height: 100%; 
+                        object-fit: cover; 
+                        object-position: center bottom;
+                        opacity: 0; 
+                        transition: opacity 1.5s ease;
+                        z-index: 2;
+                    ">
+                    
+                    <div id="visual-tip" style="position: relative; z-index: 1; color: rgba(234, 221, 207, 0.3); font-size: 24px; font-weight: bold; letter-spacing: 2px; text-align: center; top: 50%; transform: translateY(-50%);">
+                        [ 圖片預留區 ]
+                    </div>
+
+                </div>
+            </div>
+<div id="dialogue-section">
+                
+                <div id="arrival-area" style="display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; background: #f4efe6;">
+                    <h3 style="color: #8a3324; font-size: 26px; letter-spacing: 4px; margin-bottom: 20px;">- 客官來訪 -</h3>
+                    <p id="arrival-desc" style="color: #5e2b24; font-size: 18px; margin-bottom: 40px;">門外傳來了腳步聲...</p>
+                    <button class="next-step-btn" style="font-size: 18px; padding: 12px 40px; background: #eaddcf; width: auto; margin: 0;" onclick="receiveCustomer()">接見客官 ➜</button>
+                </div>
+
+                <div id="chat-area" class="chat-container" onclick="advanceChat()" style="cursor: pointer;"></div>
+
+                <div id="record-area" class="record-paper" style="display: none;">
+                    <div class="customer-title">
+                        <span class="title-tag">訪客</span>
+                        <span id="story-name">錦衣雅士</span>
+                    </div>
+                    <div class="dialogue-content">
+                        <p id="story-text" style="font-size: 16px;">
+                            <b style="color: #8a3324;">【需求確認】</b><br>
+                        </p>
+                    </div>
+                    <div class="dialogue-options" id="story-options"></div>
+                </div>
+
+               <div id="result-area" class="record-paper" style="display: none; flex-direction: column; justify-content: flex-start; align-items: center; overflow-y: auto; padding: 25px 20px;">
+                    
+                    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; gap: 15px; flex-grow: 1; margin-bottom: 20px;">
+                        
+                        <div style="flex: 1; text-align: left; padding-right: 15px; border-right: 1px dashed #c0b0a0;">
+                            <h3 id="result-title" style="color:#8a3324; font-size: 26px; margin-top: 0; margin-bottom: 15px;">- 處置完成 -</h3>
+                            <p id="result-desc" style="color:#2b2522; font-size: 17px; line-height: 1.6; margin: 0;">描述文字</p>
+                        </div>
+                        
+                        <div id="result-stats" style="padding: 15px 20px; background: rgba(138, 51, 36, 0.05); border: 1px dashed #8a3324; display: none; flex-direction: column; gap: 15px; align-items: center; text-align: center; border-radius: 8px; flex-shrink: 0; min-width: 100px;">
+                            <div style="font-size: 16px; color: #5e2b24;">獲得銀兩 <br><span id="res-money-val" style="font-weight:bold; font-size: 24px;">0</span></div>
+                            <div style="font-size: 16px; color: #5e2b24;">獲得陰德 <br><span id="res-karma-val" style="font-weight:bold; font-size: 24px;">0</span></div>
+                        </div>
+
+                    </div>
+
+                    <button class="next-step-btn" style="margin-top: auto; font-size: 16px; padding: 10px 30px; background: #eaddcf; flex-shrink: 0; width: 80%; text-align: center;" onclick="nextCustomer()">目送客官 ➜</button>
+                    
+                </div> </div> </div> <div id="right-panel">
+
+            <div id="status-overlay" style="
+                position: absolute;
+                top: 20px;
+                right: 20px; /* ★ 改為 right: 20px，移到右上角 */
+                padding: 10px 15px;
+                background: rgba(40, 35, 30, 0.85);
+                color: #eaddcf;
+                border: 1px solid #5e2b24;
+                font-size: 16px;
+                letter-spacing: 1px;
+                z-index: 200;
+                display: flex;
+                gap: 20px;
+                pointer-events: none;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+                border-radius: 4px;
+            ">
+                <div>銀兩: <span id="ui-money" style="font-weight: bold; color: #f0c040; margin-left: 5px;">0</span></div>
+                <div>精氣: <span id="ui-hp" style="font-weight: bold; color: #ff6060; margin-left: 5px;">150</span></div> <div>陰德: <span id="ui-karma" style="font-weight: bold; color: #fff; margin-left: 5px;">0</span></div>
+            </div>
+            
+            <div id="debug-controls" style="display: none;">
+                </div>
+
+            <div id="toolbar" style="
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 25px;
+                padding: 20px 60px;
+                background: rgba(224, 216, 200, 0.95);
+                border: 2px solid #5e2b24;
+                border-radius: 0px;
+                z-index: 200;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            ">
+                <style>
+                    /* 金繕藥特殊樣式 */
+                    #btn-medicine {
+                        position: relative;
+                        border-color: rgba(197, 160, 89, 0.3) !important; 
+                    }
+                    #btn-medicine::after {
+                        content: '';
+                        position: absolute;
+                        top: -2px; left: -2px; right: -2px; bottom: -2px;
+                        border: 2px solid #c5a059;
+                        border-radius: 0px;
+                        pointer-events: none;
+                        clip-path: inset(0 0 calc(100% - var(--med-progress, 0%)) 0);
+                        transition: clip-path 0.3s ease; 
+                    }
+                    #btn-medicine.active {
+                        background-color: rgba(197, 160, 89, 0.1) !important;
+                        color: #c5a059 !important;
+                        opacity: 1 !important;
+                    }
+
+                    /* 按鈕通用樣式 */
+                    .new-tool-btn {
+                        background: transparent;
+                        border: 1px solid #8a3324;
+                        color: #5e2b24;
+                        padding: 5px 20px;
+                        font-family: inherit;
+                        font-size: 16px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        border-radius: 0px;
+                        min-width: 90px;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        outline: none;
+                    }
+                    .new-tool-btn:hover { 
+                        background: rgba(138, 51, 36, 0.1); 
+                        transform: translateY(-2px); 
+                    }
+                    .new-tool-btn span.cost { 
+                        font-size: 11px; 
+                        font-weight: normal; 
+                        opacity: 0.8; 
+                        margin-top: 2px; 
+                    }
+                    .new-tool-btn.active { 
+                        background-color: rgba(138, 51, 36, 0.9) !important; 
+                        color: #eaddcf !important;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+                    }
+                    #btn-qi.active { 
+                        background-color: #000000 !important; 
+                        color: #fff !important; 
+                        border-color: #000000 !important;
+                        opacity: 1 !important;
+                    }
+                    .new-tool-btn.btn-brush-active { 
+                        background-color: #3d8a3d !important; 
+                        color: #fff !important; 
+                        border-color: #3d8a3d !important;
+                        opacity: 1 !important;
+                    }
+                </style>
+
+                <button class="new-tool-btn active" id="btn-bend" onclick="setTool('bend')">
+                    彎曲
+                </button>
+                <button class="new-tool-btn" id="btn-cut" onclick="setTool('cut')">
+                    修剪
+                </button>
+                <button class="new-tool-btn" id="btn-medicine" onclick="tryUseMedicine()">
+                    金繕藥
+                    <span class="cost" id="med-count">0/5</span>
+                </button>
+                <button class="new-tool-btn" style="border-color: #000000; color: #000000;" id="btn-qi" onclick="setTool('qi')">
+                    運氣
+                    <span class="cost">-25精氣</span>
+                </button>
+                <button class="new-tool-btn" style="border-color: #3d8a3d; color: #3d8a3d;" id="btn-brush" onclick="setTool('brush')">
+                    毛刷
+                    <span class="cost">撫慰</span>
+                </button>
+            </div>
+
+           
+                    
+            <style>
+                #right-panel canvas {
+                    display: block;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    z-index: 1; 
+                }
+            </style>
+
+        </div>
+
+<div id="custom-cursor" class="show-cursor">
+    <div id="cursor-visual" class="cursor-dot"></div>
+</div>
+
+<div id="modal-medicine" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+">
+    <div style="
+        background: #eaddcf;
+        border: 2px solid #5e2b24;
+        padding: 30px;
+        width: 300px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        font-family: 'Songti TC', serif;
+        position: relative;
+    ">
+        <h3 style="color: #8a3324; margin-top: 0;">金繕藥耗盡</h3>
+        <p style="color: #5e2b24; font-size: 16px; line-height: 1.5;">
+            藥罐已空。<br>
+            是否花費 <b>30 銀兩</b> 購買新的一罐？<br>
+            <span style="font-size: 14px; color: #8a6d3b;">(可使用 5 次)</span>
+        </p>
+        
+        <div style="margin-top: 25px; display: flex; justify-content: center; gap: 20px;">
+            <button onclick="confirmBuyMedicine()" style="
+                background: #c5a059; color: #fff; border: none;
+                padding: 8px 20px; cursor: pointer; font-size: 16px;
+                border: 1px solid #a38040;
+            ">購買</button>
+            <button onclick="closeMedicineModal()" style="
+                background: transparent; color: #5e2b24; border: 1px solid #5e2b24;
+                padding: 8px 20px; cursor: pointer; font-size: 16px;
+            ">取消</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-qi" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+">
+    <div style="
+        background: #eaddcf;
+        border: 2px solid #5e2b24;
+        padding: 30px;
+        width: 300px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        font-family: 'Songti TC', serif;
+        position: relative;
+    ">
+        <h3 style="color: #8a3324; margin-top: 0;">運氣止血</h3>
+        <p style="color: #5e2b24; font-size: 16px; line-height: 1.5;">
+            是否消耗 <b>25 精氣</b> 來強行結痂止血？
+        </p>
+        
+        <div style="margin-top: 25px; display: flex; justify-content: center; gap: 20px;">
+            <button onclick="confirmUseQi()" style="
+                background: #8a1c1c; color: #fff; border: none;
+                padding: 8px 20px; cursor: pointer; font-size: 16px;
+            ">確認</button>
+            <button onclick="closeQiModal()" style="
+                background: transparent; color: #5e2b24; border: 1px solid #5e2b24;
+                padding: 8px 20px; cursor: pointer; font-size: 16px;
+            ">取消</button>
+        </div>
+    </div>
+</div>
+<script>
+
+// ==========================================
+// 真實音效引擎 (動態停止版)
+// ==========================================
+const sndCut = new Audio('修剪音效.mp3');
+const sndMagic = new Audio('治癒音效.mp3');
+const sndCoin = new Audio('錢幣音效.mp3');
+const sndBend = new Audio('彎曲音效.mp3');
+const sndBrush = new Audio('毛刷音效.mp3'); 
+const sndPlace = new Audio('放置音效.mp3'); 
+const sndSubmit = new Audio('交付音效.mp3'); 
+const sndClick = new Audio('點擊音效.mp3'); 
+const sndView = new Audio('查看音效.mp3'); // ★ 新增：查看病歷音效
+
+sndBend.loop = true;
+sndBrush.loop = true;
+
+function playCutSound() { sndCut.currentTime = 0; sndCut.play().catch(e => console.log(e)); }
+function playMagicSound() { sndMagic.currentTime = 0; sndMagic.play().catch(e => console.log(e)); }
+function playCoinSound() { sndCoin.currentTime = 0; sndCoin.play().catch(e => console.log(e)); }
+function playBendSound() { if (sndBend.paused) sndBend.play().catch(e => console.log(e)); }
+function playBrushSound() { if (sndBrush.paused) sndBrush.play().catch(e => console.log(e)); }
+function playPlaceSound() { sndPlace.currentTime = 0; sndPlace.play().catch(e => console.log(e)); } 
+function playSubmitSound() { sndSubmit.currentTime = 0; sndSubmit.play().catch(e => console.log(e)); } 
+function playClickSound() { sndClick.currentTime = 0; sndClick.play().catch(e => console.log(e)); } 
+function playViewSound() { sndView.currentTime = 0; sndView.play().catch(e => console.log(e)); } // ★ 查看音效播放
+
+function stopActionSounds() {
+    if (!sndCut.paused) { sndCut.pause(); sndCut.currentTime = 0; }
+    if (!sndMagic.paused) { sndMagic.pause(); sndMagic.currentTime = 0; }
+    if (!sndBend.paused) { sndBend.pause(); sndBend.currentTime = 0; }
+    if (!sndBrush.paused) { sndBrush.pause(); sndBrush.currentTime = 0; }
+}
+
+// ==========================================
+// 全域點擊音效監聽器 (自動捕捉所有按鈕與對話點擊)
+// ==========================================
+window.addEventListener('click', function(e) {
+    const isButton = e.target.closest('button');
+    const isChatArea = e.target.closest('#chat-area');
+    
+    if (isButton || isChatArea) {
+        // ★ 排除掉已經有專屬音效的按鈕：開始醫治、完成交付、查看病歷
+        if (isButton && (isButton.id === 'btn-start-treat' || isButton.id === 'btn-submit-treat' || isButton.id === 'chat-next-btn')) {
+            return; 
+        }
+        playClickSound(); // 播放一般點擊音效
+    }
+});
+
+// ==========================================
+// 開發者測試：直接跳轉特定客官
+// ==========================================
+function testJumpTo(customerId) {
+    // 1. 瞬間隱藏所有過場畫面
+    document.getElementById('cover-screen').style.display = 'none';
+    document.getElementById('intro-screen').style.display = 'none';
+    document.getElementById('intermediate-screen').style.display = 'none';
+    
+    // 2. 顯示主遊戲框架並讓畫面變亮、恢復點擊
+    const app = document.getElementById('app-container');
+    app.style.display = 'flex';
+    app.style.opacity = '1';
+    app.style.pointerEvents = 'auto';
+    
+    // 3. 徹底歸零數值
+    isDead = false;
+    money = 0; prevMoney = 0;
+    playerHp = 150; prevHp = 150;
+    karma = 0; prevKarma = 0;
+    updateStatusUI();
+
+    // 4. 初始化系統
+    initBonsai();
+    loop();
+    
+    // 5. 載入指定的客官
+    loadStory(customerId);
+    
+    // 6. 確保小黑點游標顯示
+    document.getElementById('custom-cursor').classList.add('show-cursor');
+    
+    console.log("已啟用開發者跳轉至：" + customerId);
+}
+// ==========================================
+// 開場劇情控制器
+// ==========================================
+function startGame() {
+    // 1. 淡出封面並顯示游標
+    document.getElementById('cover-screen').style.opacity = 0;
+    document.getElementById('custom-cursor').classList.add('show-cursor'); // ★ 新增：讓游標出現
+    
+    setTimeout(() => {
+        document.getElementById('cover-screen').style.display = 'none';
+        // 2. 開始播放前導文字
+        playIntro();
+    }, 1500);
+}
+
+function playIntro() {
+    const introScreen = document.getElementById('intro-screen');
+    introScreen.style.display = 'flex';
+    
+    // 稍微延遲一下讓 display 生效，再開始改變 opacity
+    setTimeout(() => {
+        introScreen.style.opacity = 1;
+        
+        // --- 電影般的文字排程 ---
+        showIntroText(1, 1000);   // 第 1 秒出現第一句
+        hideIntroText(1, 4000);   // 第 4 秒消失
+        
+        showIntroText(2, 6000);   // 第 6 秒出現第二句
+        hideIntroText(2, 9000);   
+        
+        showIntroText(3, 11000);  // 第 11 秒出現第三句
+        hideIntroText(3, 14000);  
+        
+        // ★ 因為刪了第四句，提早在第 15 秒進入中繼畫面
+        setTimeout(enterMainGame, 15000);
+    }, 50);
+}
+
+function showIntroText(id, delay) {
+    setTimeout(() => { document.getElementById('intro-' + id).style.opacity = 1; }, delay);
+}
+
+function hideIntroText(id, delay) {
+    setTimeout(() => { document.getElementById('intro-' + id).style.opacity = 0; }, delay);
+}
+
+// ★ 修改：從封面跳轉到中繼插圖畫面時，觸發背景淡入與打字機效果
+function enterMainGame() {
+    document.getElementById('cover-screen').style.display = 'none';
+    document.getElementById('intro-screen').style.display = 'none';
+    
+    const interScreen = document.getElementById('intermediate-screen');
+    interScreen.style.display = 'flex';
+    
+    // 給予極短延遲，讓 display: flex 生效後再執行透明度改變，觸發 CSS 淡入動畫
+    setTimeout(() => {
+        interScreen.style.opacity = 1;
+        // 背景淡入 1 秒後，開始打字機效果
+        setTimeout(startTypewriter, 1000);
+    }, 50);
+
+    // --- 關鍵修正：確保所有紀錄變數都歸零 ---
+    isDead = false;
+    money = 0;      
+    prevMoney = 0;  
+    playerHp = 150; 
+    prevHp = 150;   
+    karma = 0;      
+    prevKarma = 0;  
+    
+    updateStatusUI(); // 立即更新 UI 顯示為 0
+}
+
+// ★ 修改：打字機效果函數 (支援換行與加快速度)
+function startTypewriter() {
+    // ★ 使用 \n 來代表換行
+    const text = "於是我開了這家病梅館，\n專門醫治那些病了的梅花......。";
+    const container = document.getElementById('typewriter-text');
+    let i = 0;
+    container.innerHTML = "";
+
+    function type() {
+        if (i < text.length) {
+            let char = text.charAt(i);
+            
+            // ★ 遇到 \n 轉換為 HTML 的換行標籤 <br>
+            if (char === '\n') {
+                container.innerHTML += '<br>';
+            } else {
+                container.innerHTML += char;
+            }
+            
+            i++;
+            // ★ 加快打字速度 (從 150 改為 60 毫秒)
+            setTimeout(type, 60); 
+        } else {
+            // 字全部打完後，讓「進入病梅館」按鈕淡入浮現並允許點擊
+            const btn = document.getElementById('enter-game-btn');
+            btn.style.opacity = 1;
+            btn.style.pointerEvents = 'auto';
+        }
+    }
+    type();
+}
+
+function showGameFromIntermediate() {
+    // 1. 隱藏中繼畫面
+    document.getElementById('intermediate-screen').style.display = 'none';
+    
+    // 2. 顯示遊戲主畫面，並強制將透明度改為 1
+    const app = document.getElementById('app-container');
+    app.style.display = 'flex';
+    app.style.opacity = '1';       // ★ 關鍵：讓畫面變亮
+    app.style.pointerEvents = 'auto'; // ★ 關鍵：讓滑鼠可以點擊
+
+    // 3. 系統初始化
+    initBonsai();
+    loop();
+    updateStatusUI();
+    
+    // 4. 載入第一位客官劇本 (錦衣雅士)
+    currentStageIndex = 0;
+    loadStory(STAGE_ORDER[currentStageIndex]);
+    
+    // 確保游標是顯示狀態
+    document.getElementById('custom-cursor').classList.add('show-cursor');
+}
+
+// 切換：隱藏對話區，顯示病歷紙
+function showRecordPaper() {
+    playViewSound(); // ★ 新增：播放查看病歷音效
+    document.getElementById('chat-area').style.display = 'none';
+    document.getElementById('record-area').style.display = 'block';
+}
+
+// (未來備用) 當新客人來時，切換回對話區
+function resetChatArea() {
+    document.getElementById('chat-area').style.display = 'flex';
+    document.getElementById('record-area').style.display = 'none';
+}
+
+// 紀錄目前對話顯示到第幾句
+let currentChatIndex = 0; 
+
+function advanceChat() {
+    const msgs = document.querySelectorAll('#chat-area .chat-msg');
+    
+    // 如果已經全部顯示完了，就不做事
+    if (currentChatIndex >= msgs.length - 1) return;
+
+    // 推進到下一句
+    currentChatIndex++;
+    
+    // 給下一句加上 'show' 類別，觸發 CSS 顯示與動畫
+    msgs[currentChatIndex].classList.add('show');
+    
+    // 讓聊天室自動往下滾動，確保最新訊息可見
+    const chatArea = document.getElementById('chat-area');
+    setTimeout(() => {
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }, 50);
+
+    // 如果已經是最後一句了，隱藏提示，顯示「查看病歷」的按鈕
+    if (currentChatIndex === msgs.length - 1) {
+        document.getElementById('chat-hint').style.display = 'none';
+        document.getElementById('chat-next-btn').style.display = 'block';
+        
+        // 再滾動一次確保按鈕有露出來
+        setTimeout(() => {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }, 50);
+    }
+}
+
+// --- 用來記錄前一次的數值，才能知道加減了多少 ---
+let prevMoney = 0; // 初始銀兩
+let prevHp = 150;    // 初始精氣
+let prevKarma = 0;   // 初始陰德
+
+// --- 產生漂浮動畫的函數 ---
+function showFloatingText(targetId, amount, color) {
+    const targetEl = document.getElementById(targetId);
+    if (!targetEl) return;
+
+    // 取得該 UI 元素在畫面上的絕對位置
+    const rect = targetEl.getBoundingClientRect();
+    
+    // 建立一個新的 div 來裝漂浮數字
+    const floatEl = document.createElement('div');
+    floatEl.className = 'floating-text';
+    floatEl.style.color = color;
+    
+    // 設定出現位置在數值的正上方稍微偏右
+    floatEl.style.left = (rect.left + window.scrollX + 5) + 'px';
+    floatEl.style.top = (rect.top + window.scrollY - 15) + 'px';
+    
+    // 設定文字，正數加上 '+' 號
+    floatEl.innerText = (amount > 0 ? '+' : '') + amount;
+
+    // 丟到畫面上
+    document.body.appendChild(floatEl);
+
+    // 動畫播放完畢後 (1.5秒)，把這個 div 垃圾回收掉
+    setTimeout(() => {
+        floatEl.remove();
+    }, 1500);
+}
+
+// --- 更新 UI 並自動觸發動畫 ---
+function updateStatusUI() {
+    const uiMoney = document.getElementById('ui-money');
+    const uiHp = document.getElementById('ui-hp');
+    const uiKarma = document.getElementById('ui-karma');
+
+    // 1. 檢查銀兩變化 (金色)
+    if (money !== prevMoney) {
+if (money > prevMoney) playCoinSound();
+        showFloatingText('ui-money', money - prevMoney, '#f0c040');
+        prevMoney = money;
+    }
+    // 2. 檢查精氣變化 (紅色)
+    if (playerHp !== prevHp) {
+        showFloatingText('ui-hp', playerHp - prevHp, '#ff6060');
+        prevHp = playerHp;
+    }
+    // 3. 檢查陰德變化 (白色)
+    if (karma !== prevKarma) {
+        showFloatingText('ui-karma', karma - prevKarma, '#ffffff');
+        prevKarma = karma;
+    }
+
+    // 更新介面上的數字
+    if (uiMoney) uiMoney.innerText = money;
+    if (uiHp) uiHp.innerText = playerHp;
+    if (uiKarma) uiKarma.innerText = karma;
+    // ★ 修改：大夫過勞死判定 (全螢幕黑白運鏡版)
+    if (playerHp <= 0 && !isDead) {
+        isDead = true; // 宣告死亡，停止畫布互動
+        
+        // 1. 觸發 CSS，讓全螢幕緩緩變灰變暗
+        document.body.classList.add('player-dead'); 
+        
+        // 封鎖點擊，但不馬上隱藏畫面，讓玩家看著世界失去色彩
+        const app = document.getElementById('app-container');
+        app.style.pointerEvents = 'none';
+        
+        setTimeout(() => {
+            // 2. 等待 2.5 秒黑白化完成後，畫面才開始淡出
+            app.style.opacity = 0;
+            app.style.transition = 'opacity 1.5s ease';
+            
+            setTimeout(() => {
+                app.style.display = 'none';
+                
+                // 3. 顯示全螢幕結局黑布
+                const endScreen = document.getElementById('ending-screen');
+                document.getElementById('ending-title').innerText = "- 氣血耗盡 -";
+                document.getElementById('ending-desc').innerHTML = "您過度消耗精氣，心力交瘁，兩眼一黑倒在了病梅館中...<br><br><b style='color:#8a1c1c; font-size: 32px;'>【結局：鞠躬盡瘁】</b>";
+                document.body.style.cursor = 'default';
+                endScreen.style.display = 'flex';
+                setTimeout(() => { endScreen.style.opacity = 1; }, 50); // 淡入結局文字
+                
+            }, 1500); // 等待淡出
+        }, 2500); // 讓玩家欣賞 2.5 秒的黑白死亡畫面
+    }
+}
+
+// ==========================================
+// 劇情資料庫 (Story Events)
+// ==========================================
+const STORY_EVENTS = {
+    // 事件 1：權貴雅士 (強制彎曲)
+    rich_official: {
+        name: "錦衣雅士",
+        tag: "訪客",
+        visual: "official",
+        scenario: "normal", // 右側梅樹對應的狀態
+        imageUrl: "圖片.PNG", 
+        chats: [
+            { speaker: "guest", text: "大夫，這樹太直了，俗不可耐！" },
+            { speaker: "player", text: "閣下希望如何處置？" },
+            { speaker: "guest", text: "給我把它扭成『游龍』狀，賞銀少不了你的。" }
+        ],
+        recordSummary: "強制將健康的梅樹彎曲成「游龍」狀，以迎合世俗審美。",
+        accept: { text: "接下此單", sub: "獲得 100 銀兩，大幅增加業障" },
+        reject: { text: "婉拒", sub: "保留陰德，錯失賞金" }
+    },
+
+    // 事件 2：老兵求醫 (治療病枯枝)
+    old_soldier: {
+        name: "退伍老兵",
+        tag: "求醫",
+        visual: "soldier",
+        scenario: "withered",
+imageUrl: "老兵.PNG",
+        chats: [
+            { speaker: "guest", text: "大夫...請您救救它..." },
+            { speaker: "player", text: "老人家，這樹滿是枯枝，恐已病入膏肓。" },
+            { speaker: "guest", text: "這是我死去同袍留下的唯一念想，求您替它剪去死枝，上點金繕藥吧。" }
+        ],
+        recordSummary: "修剪樹上的病枯枝，並使用金繕藥治癒其傷口。",
+        accept: { text: "盡力醫治", sub: "消耗藥材，增加陰德" },
+        reject: { text: "無能為力", sub: "樹木枯死，無事發生" }
+    },
+
+    // 事件 3：落魄村婦 (清理介殼蟲)
+    village_woman: {
+        name: "落魄村婦",
+        tag: "求醫",
+        visual: "woman",
+        scenario: "scale",
+imageUrl: "村婦.PNG",
+        chats: [
+            { speaker: "guest", text: "大夫，求求您...這樹近來被白蟲啃噬，快活不成了。" },
+            { speaker: "player", text: "這是生了介殼蟲。此蟲吸食樹汁，任其發展必死無疑。" },
+            { speaker: "guest", text: "我沒有多少銀兩，但求您發發慈悲，用刷子幫它理理吧..." }
+        ],
+        recordSummary: "樹木感染介殼蟲，需使用「毛刷」輕柔拂去病害，順應其生機。",
+        accept: { text: "施以援手", sub: "獲得微薄銀兩，增加陰德" },
+        reject: { text: "冷眼旁觀", sub: "保留精力，樹木枯死" }
+    },
+
+    // 事件 4：沉默商賈 (治療流膠病)
+    merchant: {
+        name: "沉默商賈",
+        tag: "求醫",
+        visual: "merchant",
+        scenario: "gum",
+imageUrl: "商賈.PNG",
+        chats: [
+            { speaker: "guest", text: "大夫。這樹...最近一直流出琥珀色的黏液。" },
+            { speaker: "player", text: "這是流膠病，多因積鬱成疾、氣血不通所致。" },
+            { speaker: "guest", text: "就像人把苦水往肚裡吞，最後從皮膚滲出來一樣嗎？請您替它清創止血吧。" }
+        ],
+        recordSummary: "樹幹鬱結引發流膠病，需先以「毛刷」刮除膠狀物，再以「金繕藥」或「運氣」封堵傷口。",
+        accept: { text: "著手清理", sub: "消耗精氣/藥材，增加陰德" },
+        reject: { text: "婉拒醫治", sub: "樹木持續流血枯萎" }
+    }
+};
+
+// ==========================================
+// 遊戲關卡與進度控制
+// ==========================================
+const STAGE_ORDER = ['rich_official', 'merchant', 'old_soldier', 'village_woman', 'rich_official', 'merchant'];
+let currentStageIndex = 0;
+
+// ★ 新增：按下「接見客官」後觸發
+function receiveCustomer() {
+    // 隱藏來訪畫面，顯示對話畫面
+    document.getElementById('arrival-area').style.display = 'none';
+    document.getElementById('chat-area').style.display = 'flex';
+    
+    // 讓左上的客官圖片漸漸浮現！
+    document.getElementById('customer-image').style.opacity = 1;
+}
+
+// ★ 修改：加入目送客官的淡出動畫
+function nextCustomer() {
+    // 1. 先讓畫面上的客官漸漸淡出消失
+    document.getElementById('customer-image').style.opacity = 0;
+    
+    // 2. 等待淡出動畫結束 (1.5秒) 後，再載入下一位客官
+    setTimeout(() => {
+        currentStageIndex++;
+        if (currentStageIndex < STAGE_ORDER.length) {
+            loadStory(STAGE_ORDER[currentStageIndex]);
+        } else {
+            showEndGame();
+        }
+    }, 1500);
+}
+
+function showEndGame() {
+    // 根據最終的陰德與銀兩，給予不同的結局評價
+    let endingText = `本日開館看診結束。<br>您總共積累了 <b style="color:#f0c040;">${money} 銀兩</b> 與 <b style="color:#8a3324;">${karma} 陰德</b>。<br><br>`;
+    let titleText = "- 閉館歇業 -";
+    
+    // ★ 提高神醫的門檻，讓玩家更有挑戰性
+    if (karma >= 30) {
+        endingText += "<b style='color:#c5a059; font-size: 32px;'>【結局：一代神醫】</b><br><br>您仁心仁術，順應樹木生機。<br>您的名號將在坊間流傳，成為受人景仰的大夫。";
+    } else if (karma < 0) {
+        endingText += "<b style='color:#8a1c1c; font-size: 32px;'>【結局：庸醫惡報】</b><br><br>您為了碎銀幾兩，迎合世俗，扭曲生靈。<br>最終業障纏身，病梅館走向沒落...";
+    } else {
+        endingText += "<b style='color:#a38040; font-size: 32px;'>【結局：平庸大夫】</b><br><br>您在俗世與醫德之間妥協，<br>成為了一名隨波逐流的普通大夫。";
+    }
+    
+    // 1. 隱藏主遊戲畫面
+    const app = document.getElementById('app-container');
+    app.style.opacity = 0;
+    app.style.pointerEvents = 'none';
+    
+    setTimeout(() => {
+        app.style.display = 'none';
+        
+        // 2. 顯示全螢幕結局
+        const endScreen = document.getElementById('ending-screen');
+        document.getElementById('ending-title').innerText = titleText;
+        document.getElementById('ending-desc').innerHTML = endingText;
+        document.body.style.cursor = 'default';
+        endScreen.style.display = 'flex';
+        setTimeout(() => { endScreen.style.opacity = 1; }, 50);
+    }, 1500);
+}
+
+// ==========================================
+// 敘事引擎控制邏輯
+// ==========================================
+
+// 讀取指定劇本
+function loadStory(eventId) {
+    const story = STORY_EVENTS[eventId];
+    if (!story) return;
+
+    // 每次載入新客人，先確保梅樹是隱藏的
+    const canvasEl = document.querySelector('#right-panel canvas');
+    if (canvasEl) canvasEl.className = 'canvas-hidden';
+
+    // 1. 重置聊天進度
+    currentChatIndex = 0;
+    const chatArea = document.getElementById('chat-area');
+    
+    // 2. 動態生成聊天室 HTML
+    let chatHTML = '';
+    story.chats.forEach((chat, index) => {
+        let showClass = index === 0 ? 'show' : '';
+        chatHTML += `
+            <div class="chat-msg ${chat.speaker} ${showClass}">
+                <div class="msg-bubble">${chat.text}</div>
+            </div>
+        `;
+    });
+    
+    chatHTML += `
+        <div id="chat-hint" style="text-align: center; color: #8a3324; font-size: 14px; opacity: 0.7; margin-top: 10px; padding: 10px;">
+            ▼ 點擊畫面繼續對話 ▼
+        </div>
+        <button id="chat-next-btn" class="next-step-btn" style="display: none; margin-bottom: 40px;" onclick="event.stopPropagation(); showRecordPaper()">查看病歷與處方 ➜</button>
+    `;
+    chatArea.innerHTML = chatHTML;
+
+    // 3. 更新病歷紙內容
+    document.getElementById('story-name').innerText = story.name;
+    document.querySelector('.title-tag').innerText = story.tag;
+    document.getElementById('story-text').innerHTML = `
+        <b style="color: #8a3324;">【需求確認】</b><br>${story.recordSummary}<br><br>
+        <span style="color: #8a1c1c; font-weight: bold;">⚠️ 注意：請隨時留意梅樹生命值，不可將梅樹弄死。</span>
+    `;
+
+    // ★ 4. 修改病歷紙按鈕：變成「開始醫治」與預設隱藏的「完成交付」
+    const optionsDiv = document.getElementById('story-options');
+    optionsDiv.innerHTML = `
+        <button class="story-btn accept" id="btn-start-treat" onclick="handleStoryDecision('${eventId}', 'start')">
+            <span class="btn-main">開始醫治</span>
+            <span class="btn-sub">將梅樹放上診療桌</span>
+        </button>
+        <button class="story-btn reject" id="btn-submit-treat" style="display: none; border-color: #3d8a3d;" onclick="handleStoryDecision('${eventId}', 'submit')">
+            <span class="btn-main" style="color: #3d8a3d;">完成交付</span>
+            <span class="btn-sub">處置完畢，交還客官</span>
+        </button>
+    `;
+
+    // 5. ★ 修改：切換至【客官來訪】畫面
+    document.getElementById('arrival-area').style.display = 'flex';
+    document.getElementById('chat-area').style.display = 'none';
+    document.getElementById('record-area').style.display = 'none';
+    const resultArea = document.getElementById('result-area');
+    if (resultArea) resultArea.style.display = 'none';
+    document.getElementById('customer-view').className = story.visual;
+
+    // 更新來訪提示文字
+    document.getElementById('arrival-desc').innerText = `一位【${story.name}】來到了病梅館。`;
+
+    // 準備好客人圖片，但先保持透明 (opacity = 0)
+    const imgEl = document.getElementById('customer-image');
+    const tipEl = document.getElementById('visual-tip');
+    
+    if (story.imageUrl) {
+        imgEl.src = story.imageUrl;
+        imgEl.style.display = 'block';
+        imgEl.style.opacity = 0; // ★ 關鍵：保持透明
+        tipEl.style.display = 'none';
+    } else {
+        imgEl.src = '';
+        imgEl.style.display = 'none';
+        tipEl.style.display = 'block';
+    }
+
+    // 6. 提早切換右側梅樹的生病狀態 (雖然現在隱藏著，但先準備好)
+    if (story.scenario) {
+        switchScenario(story.scenario, null);
+    }
+}
+
+// 處理玩家在病歷紙上的按鈕操作
+function handleStoryDecision(eventId, decision) {
+    const canvasEl = document.querySelector('#right-panel canvas');
+    
+    if (decision === 'start') {
+        console.log(`開始醫治 ${eventId} 的梅樹！`);
+        playPlaceSound(); // ★ 播放放置音效
+        canInteractTree = true;
+        document.getElementById('btn-start-treat').style.display = 'none';
+        document.getElementById('btn-submit-treat').style.display = 'block';
+        if (canvasEl) canvasEl.className = 'anim-place';
+
+    } else if (decision === 'submit') {
+        console.log(`交付 ${eventId} 的梅樹！`);
+        playSubmitSound(); // ★ 新增：播放交付音效
+        canInteractTree = false;
+        if (canvasEl) canvasEl.className = 'anim-take';
+        
+        // 切換左側畫面，顯示結算區塊
+        document.getElementById('record-area').style.display = 'none';
+        document.getElementById('result-area').style.display = 'flex';
+        
+        // 檢查樹木是否「完全治癒」
+        let isHealed = true;
+        if (activeWounds.length > 0) isHealed = false;
+        for (let n of nodes) {
+            if (n.insects && n.insects.length > 0) isHealed = false;
+            if (n.hasGum) isHealed = false;
+            if (n.hasHole) isHealed = false;
+            if (n.isWithered) isHealed = false;
+        }
+
+        let rTitle = "";
+        let rDesc = "";
+        let earnedMoney = 0; 
+        let earnedKarma = 0;
+
+        if (isDead) {
+            // --- 結局 A：樹死了 (醫療事故) ---
+            rTitle = "- 醫療事故 -";
+            if (eventId === 'rich_official') {
+                rDesc = "「你竟敢弄死我的奇珍異寶！庸醫！」<br>雅士大發雷霆，拂袖而去。";
+                earnedKarma = -10; 
+            } else if (eventId === 'old_soldier') {
+                rDesc = "「老夥計...終究還是留不住你嗎...」<br>老兵步履蹣跚地抱著枯木離開了。";
+                earnedKarma = -5;
+            } else {
+                rDesc = "客官看著枯死的梅樹，滿臉失望地離開了。";
+                earnedKarma = -5;
+            }
+        } else {
+            // --- 結局 B：樹活著 (檢查是否有治好) ---
+            if (eventId === 'rich_official') {
+                if (vitality >= 80) {
+                    rTitle = "- 惹怒客官 -";
+                    rDesc = "「這樹還是直挺挺的，你這庸醫根本沒把它折彎！還想討賞？」<br>雅士憤怒地抱著樹走了。<br><br><span style='color:#3d8a3d; font-size: 15px;'>（您堅守醫德，保留了梅樹的生機）</span>";
+                    earnedMoney = 0;
+                    earnedKarma = 10;  
+                } else if (vitality >= 50 && vitality < 80) {
+                    rTitle = "- 處置完成 -";
+                    rDesc = "「嘖...彎是彎了，但還不夠曲、不夠奇！罷了罷了，賞你點辛苦錢，下次手腳俐落點！」<br>雅士撇撇嘴，留下一些銀兩。";
+                    earnedMoney = 30; 
+                    earnedKarma = -30;
+                } else if (vitality >= 20 && vitality < 50) {
+                    rTitle = "- 處置完成 -";
+                    rDesc = "「哈哈哈！夠曲！太美了！這才叫藝術！這賞銀是你的了！」<br>雅士滿意地丟下大把銀兩。";
+                    earnedMoney = 60; 
+                    earnedKarma = -60; 
+                } else {
+                    rTitle = "- 處置完成 -";
+                    rDesc = "「絕品！真是絕品！這等極致的美，世間罕有！大夫，這是重賞，全給你了！」<br>雅士如獲至寶，狂喜地留下巨額銀兩。";
+                    earnedMoney = 90; 
+                    earnedKarma = -100;
+                }
+            } else if (eventId === 'old_soldier') {
+                if (isHealed) {
+                    if (vitality < 80) { // ★ 生命值低於 80% 懲罰
+                        rTitle = "- 處置完成 (元氣大傷) -";
+                        rDesc = "「病是治好了...但這樹怎麼被折騰得奄奄一息的...大夫，您下手太重了。」<br>老兵心疼地看著梅樹，勉強付了些醫藥費。";
+                        earnedMoney = 5;
+                        earnedKarma = -10;
+                    } else {
+                        rTitle = "- 處置完成 -";
+                        rDesc = "「太好了...它看起來有精神多了。大恩大德，沒齒難忘！」<br>老兵留下僅有的幾文錢，向您深深鞠躬。";
+                        earnedMoney = 5;   
+                        earnedKarma = 15;  
+                    }
+                } else {
+                    rTitle = "- 處置未果 -";
+                    rDesc = "「唉...病枯枝還在，看來連您也無能為力嗎...」<br>老兵嘆了口氣，抱著梅樹落寞地離開了。";
+                }
+            } else if (eventId === 'village_woman') {
+                if (isHealed) {
+                    if (vitality < 80) { // ★ 生命值低於 80% 懲罰
+                        rTitle = "- 處置完成 (元氣大傷) -";
+                        rDesc = "「蟲是沒了，但這樹怎麼看起來快死了...」<br>村婦心疼地看著梅樹，留下幾文錢便匆匆離去。";
+                        earnedMoney = 5;
+                        earnedKarma = -10;
+                    } else {
+                        rTitle = "- 處置完成 -";
+                        rDesc = "「白蟲都沒了！大夫您真是菩薩心腸！」<br>村婦留下微薄的碎銀，連連道謝。";
+                        earnedMoney = 2;   
+                        earnedKarma = 15;  
+                    }
+                } else {
+                    rTitle = "- 處置未果 -";
+                    rDesc = "「這蟲子...怎麼還在爬啊...大夫您是不是也沒轍...」<br>村婦愁眉苦臉地帶著樹走了。";
+                }
+            } else if (eventId === 'merchant') {
+                if (isHealed) {
+                    if (vitality < 80) { // ★ 生命值低於 80% 懲罰
+                        rTitle = "- 處置完成 (元氣大傷) -";
+                        rDesc = "「流膠是止住了，但這樹被你折騰得半死不活，真晦氣！」<br>商賈不悅地丟下幾枚銅錢。";
+                        earnedMoney = 5;
+                        earnedKarma = -10;
+                    } else {
+                        rTitle = "- 處置完成 -";
+                        rDesc = "「不再流膠了...看來它挺過來了。」<br>商賈點點頭，留下一小錠銀兩作為謝禮。";
+                        earnedMoney = 10;  
+                        earnedKarma = 15;  
+                    }
+                } else {
+                    rTitle = "- 處置未果 -";
+                    rDesc = "「這樹怎麼還在流膠流血？我看您這病梅館也是浪得虛名。」<br>商賈搖搖頭，一文錢也沒付就走了。";
+                }
+            }
+        }
+
+        // 更新總數值
+        money += earnedMoney;
+        karma += earnedKarma;
+
+        let moneyStr = (earnedMoney > 0 ? '+' : '') + earnedMoney;
+        let karmaStr = (earnedKarma > 0 ? '+' : '') + earnedKarma;
+        
+        document.getElementById('res-money-val').innerText = moneyStr;
+        if (earnedMoney > 0) document.getElementById('res-money-val').style.color = '#b58500';
+        else if (earnedMoney < 0) document.getElementById('res-money-val').style.color = '#8a1c1c';
+        else document.getElementById('res-money-val').style.color = '#5e2b24';
+        
+        document.getElementById('res-karma-val').innerText = karmaStr;
+        if (earnedKarma > 0) document.getElementById('res-karma-val').style.color = '#3d8a3d';
+        else if (earnedKarma < 0) document.getElementById('res-karma-val').style.color = '#8a1c1c';
+        else document.getElementById('res-karma-val').style.color = '#5e2b24';
+        
+        document.getElementById('result-stats').style.display = 'flex';
+        document.getElementById('result-title').innerText = rTitle;
+        document.getElementById('result-desc').innerHTML = rDesc;
+        updateStatusUI();
+    }
+}
+// --- 1. 全局狀態變數 ---
+let currentTool = 'bend'; // 預設工具
+let currentScenario = 'normal'; // 當前劇情狀態
+let canInteractTree = false;
+let money = 0;
+let playerHp = 150;
+let karma = 0;
+
+let medicineUses = 0;      // 剩餘使用次數
+const MAX_MED_USES = 5;    // 一罐最多用幾次
+const MEDICINE_COST = 30;  // 購買費用
+
+// SVG 圖標定義 (用於游標)
+
+// 1. 剪刀 (新增紅色瞄準點)
+const SVG_SCISSORS = `
+<svg viewBox="0 0 24 24">
+  <circle cx="6" cy="6" r="3"/>
+  <circle cx="6" cy="18" r="3"/>
+  <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+  <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+  <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+</svg>`;
+// 2. 毛刷 (保持不變)
+const SVG_BRUSH = `<svg viewBox="0 0 24 24"><path d="M7 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-5 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM19 3H5c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 12V5h14v7H5z"/></svg>`;
+
+// 3. 金繕藥 (新增：小十字)
+const SVG_MEDICINE = `
+<svg viewBox="0 0 24 24">
+  <line x1="12" y1="5" x2="12" y2="19"/>
+  <line x1="5" y1="12" x2="19" y2="12"/>
+</svg>`;
+
+
+function switchScenario(scenario, btn) {
+    currentScenario = scenario;
+
+    // 更新按鈕樣式
+    document.querySelectorAll('.debug-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+
+    // 重置樹木
+    initBonsai();
+    console.log("切換場景至:", scenario);
+}
+
+// --- 1. 工具切換函數 (已新增毛刷) ---
+// --- 1. 工具切換函數 ---
+function setTool(tool) {
+    currentTool = tool;
+    stopActionSounds();
+    // 移除所有按鈕的 active 狀態
+    const allBtns = document.querySelectorAll('.new-tool-btn');
+    allBtns.forEach(btn => {
+        btn.classList.remove('active');
+        btn.classList.remove('btn-brush-active');
+    });
+    
+    // 根據工具名稱，點亮對應按鈕
+    if (tool === 'bend') document.getElementById('btn-bend').classList.add('active');
+    else if (tool === 'cut') document.getElementById('btn-cut').classList.add('active');
+    else if (tool === 'medicine') document.getElementById('btn-medicine').classList.add('active');
+    else if (tool === 'qi') document.getElementById('btn-qi').classList.add('active');
+    else if (tool === 'brush') document.getElementById('btn-brush').classList.add('btn-brush-active');
+
+    updateCursorIcon();
+}
+
+// 全域變數，用來記住剛才點了哪個傷口
+let qiTargetNode = null; 
+
+// 關閉運氣視窗
+function closeQiModal() {
+    document.getElementById('modal-qi').style.display = 'none';
+    qiTargetNode = null;
+}
+
+// 確認使用運氣
+function confirmUseQi() {
+    if (!qiTargetNode) {
+        closeQiModal();
+        return;
+    }
+    
+    // 檢查精氣是否足夠
+    if (playerHp >= 25) {
+        let closest = qiTargetNode;
+        let bleedingIndex = activeWounds.findIndex(w => w.parentNode === closest);
+        let isBleeding = (bleedingIndex !== -1);
+
+        // 執行止血與結痂
+        closest.hasHole = false;
+        if (isBleeding) { activeWounds.splice(bleedingIndex, 1); }
+        for(let i = activeWounds.length - 1; i >= 0; i--){
+            if(activeWounds[i].parentNode === closest) activeWounds.splice(i, 1);
+        }
+        
+        closest.isScabbed = true; 
+        playerHp -= 25; 
+        
+        createMagic(closest.pos, 'qi'); 
+playMagicSound();
+        updateStatusUI();
+        checkRecovery(); // 檢查是否全樹康復開花
+        
+        console.log("運氣止血結痂");
+    } else {
+        alert("精氣不足，無法強行運氣！");
+    }
+    
+    closeQiModal(); // 執行完關閉視窗
+}
+
+// --- 金繕藥購買與使用邏輯 ---
+
+// 嘗試切換到金繕藥工具
+function tryUseMedicine() {
+    if (medicineUses > 0) {
+        setTool('medicine');
+    } else {
+        // 次數為 0，彈出購買視窗
+        document.getElementById('modal-medicine').style.display = 'flex';
+        // 如果當前是其他工具，保持原狀；如果是金繕藥，取消選取
+        if (currentTool === 'medicine') setTool('bend'); 
+    }
+}
+
+// 關閉視窗
+function closeMedicineModal() {
+    document.getElementById('modal-medicine').style.display = 'none';
+}
+
+// 確認購買
+function confirmBuyMedicine() {
+    if (money >= MEDICINE_COST) {
+        money -= MEDICINE_COST;
+        medicineUses = MAX_MED_USES;
+        updateStatusUI();
+        updateMedicineBtnUI(); // 更新按鈕外觀
+        closeMedicineModal();
+        setTool('medicine'); // 自動切換過去
+        console.log("已購買金繕藥");
+    } else {
+        alert("銀兩不足，無法購買！");
+    }
+}
+
+// 更新金繕藥按鈕 UI (邊框長度與文字)
+function updateMedicineBtnUI() {
+    const btn = document.getElementById('btn-medicine');
+    const countSpan = document.getElementById('med-count');
+    
+    // 計算百分比 (例如 3/5 = 60%)
+    let progress = (medicineUses / MAX_MED_USES) * 100;
+    
+    // 設定 CSS 變數，控制邊框長度
+    btn.style.setProperty('--med-progress', progress + '%');
+    
+    // 更新文字
+    if (countSpan) countSpan.innerText = `${medicineUses}/${MAX_MED_USES}`;
+    
+    // 如果沒次數了，視覺變淡
+    if (medicineUses <= 0) {
+        btn.style.opacity = '0.5';
+    } else {
+        btn.style.opacity = '1';
+    }
+}
+
+// --- 2. 游標更新函數 ---
+function updateCursorIcon() {
+    const v = document.getElementById('cursor-visual');
+    if (!v) return;
+    
+    // 徹底清除舊狀態
+    v.innerHTML = '';
+    v.className = '';
+    
+    if (currentTool === 'bend') {
+        v.className = 'cursor-dot';
+        v.style.backgroundColor = '#1a1a1a'; // 彎曲：強制黑點
+    } else if (currentTool === 'qi') {
+        v.className = 'cursor-dot';
+        v.style.backgroundColor = '#8a1c1c'; // 運氣：強制紅點
+    } else if (currentTool === 'cut') {
+        v.className = 'cursor-icon cursor-cut';
+        v.innerHTML = SVG_SCISSORS; 
+        v.style.backgroundColor = 'transparent'; // 清除背景色，顯示 SVG
+    } else if (currentTool === 'brush') {
+        v.className = 'cursor-icon cursor-brush';
+        v.innerHTML = SVG_BRUSH;
+        v.style.backgroundColor = 'transparent'; // 清除背景色
+    } else if (currentTool === 'medicine') {
+        v.className = 'cursor-icon cursor-medicine';
+        v.innerHTML = SVG_MEDICINE;
+        v.style.backgroundColor = 'transparent'; // 清除背景色
+    }
+}
+
+const CONFIG = {
+    woodColor: [60, 45, 40],     
+    woodGrainColor: [35, 25, 20],
+
+    // --- 新增病徵顏色 ---
+    witheredColor: [160, 155, 150], // 枯枝：灰白色
+    scaleColor: [240, 240, 245],    // 介殼蟲：白色
+    gumColor: [200, 120, 30],       // 流膠：琥珀色
+    
+    flowerColor: [180, 50, 40],  
+    flowerCenter: [80, 20, 20],
+    potColor: [70, 60, 55],      
+    
+    bloodSprayColor: [140, 20, 20],
+    viscousBloodColor: [100, 10, 10],
+    
+    dragResistance: 0.2,
+    bendCost: 0.15,
+    cutCost: 15.0,
+    
+    tableHeightRatio: 0.85,
+    topBarrier: 30,
+    growthSafetyZone: 100
+};
+
+// 痛覺強度
+let painIntensity = 0;
+let treeBentAmount = 0; // 記錄樹木被彎曲的程度
+let rootNode;
+let nodes = [];
+let treeBlood = [];       
+let activeWounds = [];    
+let fallingLimbs = [];    
+let uiBloodParticles = [];
+let vitality = 100;
+let prevVitality = 100;
+let isCuttingMode = false;
+let draggedNode = null;
+let basePos;
+let isDead = false;
+let paperTexture; 
+
+// SVG 剪刀圖標
+const SCISSORS_SVG = `
+<svg viewBox="0 0 24 24">
+  <circle cx="6" cy="6" r="3" />
+  <circle cx="6" cy="18" r="3" />
+  <line x1="20" y1="4" x2="8.12" y2="15.88" />
+  <line x1="14.47" y1="14.48" x2="20" y2="20" />
+  <line x1="8.12" y1="8.12" x2="12" y2="12" />
+</svg>
+`;
+
+function setup() {
+    updateMedicineBtnUI();
+    
+    // ★ 修改 1：獲取右側面板 DOM 元素
+    const container = document.getElementById('right-panel');
+    // 取得該面板當下的寬高
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+
+    // ★ 修改 2：根據面板大小創建畫布
+    let cnv = createCanvas(w, h);
+    
+    // ★ 修改 3：將畫布綁定到右側面板內 (關鍵！)
+    cnv.parent('right-panel'); 
+    cnv.class('canvas-hidden'); // ★ 新增：預設將畫布隱藏，等待「開始醫治」
+    pixelDensity(2);
+    
+    // ★ 修改 4：重新計算樹的根部位置 (會自動置中於新的小畫布)
+    basePos = createVector(width / 2, height * CONFIG.tableHeightRatio - 55);
+    
+    createPaperTexture();
+    initBonsai();
+}
+function createPaperTexture() {
+    paperTexture = createGraphics(width, height);
+    paperTexture.noStroke();
+    paperTexture.background(224, 216, 200); 
+    for (let i = 0; i < 50; i++) {
+        let x = random(width);
+        let y = random(height);
+        let r = random(5, 50);
+        let c = color(180, 170, 150, random(5, 20));
+        paperTexture.fill(c);
+        paperTexture.ellipse(x, y, r, r * random(0.8, 1.2));
+    }
+    let gradient = paperTexture.drawingContext.createRadialGradient(
+        width/2, height/2, height/3,
+        width/2, height/2, height
+    );
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(60,50,40,0.2)'); 
+    paperTexture.drawingContext.fillStyle = gradient;
+    paperTexture.rect(0, 0, width, height);
+}
+
+// --- 初始化樹木 (散落枯枝 + 固定流膠版) ---
+// --- 初始化樹木 (枯枝連續傳遞版) ---
+function initBonsai() {
+    nodes = [];
+    treeBlood = [];
+    activeWounds = [];
+    fallingLimbs = [];
+    uiBloodParticles = [];
+    magicParticles = [];
+    fallingInsects = [];
+    fallingFlowers = [];
+    vitality = 100;
+    prevVitality = 100;
+    isDead = false;
+    painIntensity = 0; 
+    treeBentAmount = 0; // 每次換樹時重置彎曲度
+    document.body.classList.remove('dead');
+    let cnv = document.querySelector('canvas');
+    if(cnv) cnv.classList.remove('shake-anim');
+    
+    // 1. 根部
+    rootNode = new Node(basePos.copy(), null, 90); 
+    rootNode.isTrunk = true;
+    nodes.push(rootNode);
+    
+    // 2. 主幹
+    let currentParent = rootNode;
+    let trunkSegments = 3;
+    let trunkNodes = [rootNode];
+    
+    for(let i=0; i<trunkSegments; i++) {
+        let angle = -PI/2 + random(-0.05, 0.05); 
+        let len = random(35, 50); 
+        let pos = p5.Vector.add(currentParent.pos, p5.Vector.fromAngle(angle).mult(len));
+        let thickness = 85 - i * 12; 
+        
+        let newNode = new Node(pos, currentParent, thickness);
+        newNode.isTrunk = true;
+        currentParent.children.push(newNode);
+        nodes.push(newNode);
+        trunkNodes.push(newNode); 
+        currentParent = newNode;
+    }
+    // ★ 新增：老兵的梅樹專屬設定 (先隱藏主幹舊傷)
+    if (currentScenario === 'withered') {
+        // 先標記這是一個隱藏傷口，此時 hasHole 為 false，所以無法使用金繕藥
+        trunkNodes[2].isHiddenWound = true; 
+        trunkNodes[2].hasHole = false; 
+    }
+    // 3. 生成樹枝
+    let branchCount = 5;
+    let totalSpread = PI - 0.2;
+    let sectorSize = totalSpread / branchCount;
+    let startAngle = -PI + 0.1;
+
+    for (let i = 0; i < branchCount; i++) {
+        let startNodeIndex = trunkNodes.length - 1 - floor(random(0, 2));
+        let parentNode = trunkNodes[startNodeIndex];
+        let sectorCenter = startAngle + i * sectorSize + (sectorSize / 2);
+        let angleLimitMin = sectorCenter - (sectorSize * 0.45);
+        let angleLimitMax = sectorCenter + (sectorSize * 0.45);
+        let currentAngle = sectorCenter;
+        let branchSegments = floor(random(9, 12)); 
+
+        for (let j = 0; j < branchSegments; j++) {
+            let wiggle = random(-0.4, 0.4);
+            currentAngle += wiggle;
+            currentAngle = constrain(currentAngle, angleLimitMin, angleLimitMax);
+
+            let len = random(20, 35); 
+            let pos = p5.Vector.add(parentNode.pos, p5.Vector.fromAngle(currentAngle).mult(len));
+            
+            if (pos.y < CONFIG.topBarrier) {
+                pos.y = CONFIG.topBarrier;
+                currentAngle = (random() > 0.5) ? 0 : -PI;
+            }
+
+            let startThick = 28; 
+            let endThick = 6;
+            let thickness = map(j, 0, branchSegments, startThick, endThick);
+            
+            let newNode = new Node(pos, parentNode, thickness);
+            
+            // ★ 修改：枯枝傳遞邏輯
+            // 1. 如果父節點已經枯萎，子節點必定枯萎 (確保連續)
+            if (parentNode.isWithered) {
+                newNode.isWithered = true;
+            }
+            // 2. 如果父節點沒枯，才根據機率決定是否開始枯萎
+            else if (currentScenario === 'withered') {
+                // 從後段開始有機率變枯
+                if (j > branchSegments - 4 && random() < 0.1) {
+                    newNode.isWithered = true;
+                }
+            }
+            
+            // --- 其他病徵 ---
+            if (currentScenario === 'scale') {
+                if (random() < 0.4) { 
+                    let count = floor(random(3, 8)); 
+                    for(let k=0; k<count; k++) {
+                        newNode.insects.push({ relPos: random(0.1, 0.9), offset: random(-3, 3), active: true });
+                    }
+                }
+            }
+            else if (currentScenario === 'gum') {
+                if (j === 0) {
+                    newNode.hasGum = true;
+                }
+            }
+            else if (currentScenario === 'normal') {
+                if (random() < 0.2 || j === branchSegments - 1) {
+                    newNode.hasFlower = true;
+                    newNode.flowerSize = random(12, 18);
+                    newNode.flowerOffset = p5.Vector.random2D().mult(random(2, 5));
+                }
+            }
+            
+            if (thickness > 8 && random() < 0.3) newNode.hasKnot = true;
+
+            parentNode.children.push(newNode);
+            nodes.push(newNode);
+
+            // --- 細枝生成 ---
+            if (j > 0 && random() < 0.5) { 
+                let twigParent = newNode;
+                let twigSegments = 2; 
+                let twigBaseAngle = -PI/2 + random(-0.3, 0.3);
+                let tStartThick = thickness * 0.6; 
+                if (tStartThick < 3) tStartThick = 3;
+
+                for(let t=0; t<twigSegments; t++) {
+                    let tLen = random(35, 50); 
+                    let tPos = p5.Vector.add(twigParent.pos, p5.Vector.fromAngle(twigBaseAngle).mult(tLen));
+                    if (tPos.y < CONFIG.topBarrier) tPos.y = CONFIG.topBarrier;
+                    
+                    let tThick = map(t, 0, twigSegments, tStartThick, 1.5); 
+                    let twigNode = new Node(tPos, twigParent, tThick);
+                    
+                    // ★ 修改：細枝也繼承枯萎狀態
+                    if (twigParent.isWithered) {
+                        twigNode.isWithered = true;
+                    } 
+                    else if (currentScenario === 'withered') {
+                        if (random() < 0.3) twigNode.isWithered = true;
+                    }
+                    
+                    if (currentScenario === 'normal' && t === twigSegments - 1 && random() < 0.6) {
+                        twigNode.hasFlower = true;
+                        twigNode.flowerSize = random(8, 12);
+                        twigNode.flowerOffset = createVector(0,0);
+                    }
+                    if (currentScenario === 'scale' && random() < 0.3) {
+                         let count = floor(random(1, 4));
+                         for(let k=0; k<count; k++) {
+                            twigNode.insects.push({ relPos: random(0.1, 0.9), offset: random(-1, 1), active: true });
+                        }
+                    }
+                    twigParent.children.push(twigNode);
+                    nodes.push(twigNode);
+                    twigParent = twigNode; 
+                    twigBaseAngle += random(-0.1, 0.1); 
+                }
+            }
+            parentNode = newNode;
+        }
+    }
+}
+
+let hoverTarget = null;
+
+function updateHoverState() {
+    // 1. 重置所有節點的懸停狀態
+    hoverTarget = null;
+    for (let n of nodes) {
+        n.isHovered = false;
+    }
+
+    // 只有在「修剪模式」才進行偵測
+    if (currentTool !== 'cut') return;
+
+    let minDist = 20; // 判定距離 (設大一點比較好選)
+
+    for (let n of nodes) {
+        if (n.pos.y > height * CONFIG.tableHeightRatio) continue;
+        if (!n.parent) continue; // 樹根不能剪
+
+        // 線段偵測邏輯
+        let pStart = n.parent.pos;
+        let pEnd = n.pos;
+        let v = p5.Vector.sub(pEnd, pStart);
+        let w = p5.Vector.sub(createVector(mouseX, mouseY), pStart);
+
+        let c1 = w.dot(v);
+        let c2 = v.dot(v);
+        if (c2 <= 0) continue;
+        let t = c1 / c2;
+
+        // ★ 關鍵：允許 0.0 ~ 1.0 全段判定 (原本只有 0.5)
+        if (t >= 0 && t <= 1.0) {
+            let projection = p5.Vector.add(pStart, p5.Vector.mult(v, t));
+            let d = dist(mouseX, mouseY, projection.x, projection.y);
+            
+            if (d < minDist) {
+                minDist = d;
+                hoverTarget = n;
+            }
+        }
+    }
+
+    // 2. 如果找到了目標，將目標及其「所有子樹」都標記為懸停 (變紅)
+    if (hoverTarget) {
+        markSubtreeHover(hoverTarget);
+    }
+}
+
+// 遞迴函數：把節點和它的孩子都設為 true
+function markSubtreeHover(node) {
+    node.isHovered = true;
+    for (let child of node.children) {
+        markSubtreeHover(child);
+    }
+}
+
+function draw() {
+    image(paperTexture, 0, 0);
+    updateHoverState();
+    
+    updateCustomCursorPos();
+   
+    checkDeath();
+
+// === 繪製死亡時的落花 ===
+    for (let f of fallingFlowers) {
+        f.update();
+        f.display();
+    }
+    fallingFlowers = fallingFlowers.filter(f => !f.isDead());
+
+    // 繪製掉落的蟲子
+    for (let bug of fallingInsects) {
+        bug.update();
+        bug.display();
+    }
+    fallingInsects = fallingInsects.filter(b => !b.isDead());
+
+    // 創傷衰退
+    for (let n of nodes) {
+        if (n.trauma > 0) {
+            n.trauma -= 0.02; 
+            if (n.trauma < 0) n.trauma = 0;
+        }
+    }
+
+    updateAndDrawUIParticles();
+
+    for (let limb of fallingLimbs) {
+        limb.update();
+        limb.display();
+    }
+    fallingLimbs = fallingLimbs.filter(l => l.alpha > 0);
+
+    drawTable();
+    drawTree(rootNode);
+    updateWounds(); 
+
+    for (let b of treeBlood) {
+        b.update();
+        b.display();
+    }
+    treeBlood = treeBlood.filter(b => !b.isDead());
+
+    drawPot();
+
+// 繪製血跡
+    for (let b of treeBlood) {
+        b.update();
+        b.display();
+    }
+    treeBlood = treeBlood.filter(b => !b.isDead());
+
+    // === 新增：繪製魔法粒子 ===
+    for (let m of magicParticles) {
+        m.update();
+        m.display();
+    }
+    magicParticles = magicParticles.filter(m => !m.isDead());
+    // ==========================
+
+    drawPot();
+    
+    // 痛覺衰退
+    painIntensity = max(0, painIntensity - 0.05); 
+    if (painIntensity > 0) {
+        noStroke();
+        fill(150, 0, 0, map(painIntensity, 0, 1, 0, 100));
+        rect(0, 0, width, height);
+    }
+
+    if (!isDead) {
+        drawVitalityBarOnly();
+    }
+}
+
+// 為了不讓 draw() 呼叫報錯，保留一個空函數
+function updateCustomCursorPos() {}
+
+// ★ 升級版：智慧滑鼠追蹤器 (左邊黑點、右邊工具)
+let isHoveringRight = false; // 記憶滑鼠目前在哪一邊
+
+// ★ 修正：全域游標追蹤與動態切換
+function updateCursorPosition(e) {
+    const cursor = document.getElementById('custom-cursor');
+    if (cursor) {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+        
+        const rightPanel = document.getElementById('right-panel');
+        const app = document.getElementById('app-container');
+        
+        // ★ 判斷：進入主遊戲 (透明度為1) 才顯示小黑點
+        if (app && app.style.opacity === '1') {
+            cursor.style.display = 'block'; // 顯示自訂小黑點
+            document.body.style.cursor = 'none'; // 隱藏系統游標
+            
+            if (rightPanel) {
+                const rect = rightPanel.getBoundingClientRect();
+                if (e.clientX >= rect.left) {
+                    updateCursorIcon(); // 右半邊顯示工具
+                } else {
+                    resetToDot(); // 左半邊維持黑點
+                }
+            }
+        } else {
+            // 封面與中繼畫面：隱藏小黑點，顯示系統游標
+            cursor.style.display = 'none'; 
+            document.body.style.cursor = 'default';
+        }
+    }
+}
+// 監聽滑鼠移動
+window.addEventListener('mousemove', updateCursorPosition);
+
+// ★ 關鍵修正：確保腳本載入完畢立刻將游標重置為黑點樣式
+resetToDot();
+// 輔助函數：強行恢復成小黑點
+function resetToDot() {
+    const v = document.getElementById('cursor-visual');
+    if (v) {
+        v.className = 'cursor-dot';
+        v.innerHTML = '';
+        v.style.backgroundColor = '#1a1a1a';
+        v.style.width = '8px';
+        v.style.height = '8px';
+    }
+}
+function checkDeath() {
+    if (vitality <= 0 && !isDead) {
+        isDead = true;
+        document.body.classList.add('dead'); // 觸發 CSS 的黑白與封鎖
+        
+        // 畫面震動 (右側畫布)
+        let cnv = document.querySelector('canvas');
+        if (cnv) {
+            cnv.classList.remove('shake-anim');
+            void cnv.offsetWidth;
+            cnv.classList.add('shake-anim');
+        }
+        
+        // ★ 死亡瞬間：強制讓全樹的梅花掉落
+        for (let n of nodes) {
+            if (n.hasFlower) {
+                // 算出花朵目前的絕對位置
+                let fx = n.pos.x + n.flowerOffset.x;
+                let fy = n.pos.y + n.flowerOffset.y;
+                
+                // 產生一朵落花物件
+                fallingFlowers.push(new FallingFlower(fx, fy, n.flowerSize));
+                
+                // 把樹枝上的花拔除
+                n.hasFlower = false; 
+            }
+        }
+        console.log("梅樹已死亡！右側畫面抖動轉為黑白，工具列封鎖。");
+    }
+}
+// --- 斷肢 ---
+class FallingLimb {
+    constructor(rootNode) {
+        this.origin = rootNode.pos.copy();
+        this.vel = createVector(random(-1, 1), -2); 
+        this.angVel = random(-0.1, 0.1); 
+        this.angle = 0;
+        this.alpha = 255;
+        this.segments = []; 
+        this.capture(rootNode, createVector(0, 0));
+    }
+    
+    capture(node, relativePos) {
+        let data = {
+            pos: relativePos.copy(),
+            thickness: node.thickness,
+            hasFlower: node.hasFlower,
+            flowerSize: node.flowerSize,
+            flowerOffset: node.flowerOffset.copy(),
+            hasKnot: node.hasKnot,
+            seed: node.seed,
+            children: []
+        };
+        this.segments.push(data);
+        for (let child of node.children) {
+            let offset = p5.Vector.sub(child.pos, node.pos); 
+            let newRel = p5.Vector.add(relativePos, offset);
+            this.capture(child, newRel);
+            this.segments[this.segments.length - 1].linesToChild = this.segments[this.segments.length - 1].linesToChild || [];
+            this.segments[this.segments.length - 1].linesToChild.push(newRel);
+        }
+    }
+
+    update() {
+        this.vel.y += 0.25; 
+        this.origin.add(this.vel);
+        this.angle += this.angVel;
+        if (this.origin.y > height * CONFIG.tableHeightRatio + 50) {
+            this.alpha -= 2; 
+            this.vel.mult(0); 
+            this.angVel = 0;
+        }
+    }
+
+    display() {
+        push();
+        translate(this.origin.x, this.origin.y);
+        rotate(this.angle);
+        
+        let baseC = color(...CONFIG.woodColor);
+        baseC.setAlpha(this.alpha);
+        let grainC = color(CONFIG.woodGrainColor);
+        grainC.setAlpha(this.alpha);
+        
+        for (let seg of this.segments) {
+            if (seg.linesToChild) {
+                strokeCap(ROUND);
+                for (let childPos of seg.linesToChild) {
+                    stroke(baseC);
+                    strokeWeight(seg.thickness);
+                    line(seg.pos.x, seg.pos.y, childPos.x, childPos.y);
+                    stroke(grainC);
+                    strokeWeight(1);
+                    line(seg.pos.x, seg.pos.y, childPos.x, childPos.y);
+                }
+            }
+            noStroke();
+            fill(baseC);
+            circle(seg.pos.x, seg.pos.y, seg.thickness * 0.9);
+            if (seg.hasFlower) {
+                drawFlowerVisual(seg.pos.x + seg.flowerOffset.x, seg.pos.y + seg.flowerOffset.y, seg.flowerSize, this.alpha);
+            }
+        }
+        pop();
+    }
+}
+
+// --- 檢查痊癒與重生 (缺了這個會導致修剪枯枝當機) ---
+function checkRecovery() {
+    let hasDisease = false;
+    
+    // 1. 檢查是否有正在流血的傷口 (這是新增的關鍵判定！)
+    if (activeWounds.length > 0) {
+        hasDisease = true;
+    }
+
+    // 2. 檢查樹木節點的狀態
+    for (let n of nodes) {
+        // 有蟲
+        if (n.insects && n.insects.length > 0) hasDisease = true;
+        // 有流膠 (尚未刷除)
+        if (n.hasGum) hasDisease = true;
+        // 有刷除流膠後留下的孔洞 (尚未治療)
+        if (n.hasHole) hasDisease = true;
+        // 有枯枝
+        if (n.isWithered) hasDisease = true;
+    }
+
+    // 3. 只有當「完全沒有病」且「完全沒有流血」時，才觸發盛開
+    if (!hasDisease) {
+    if (currentScenario === 'normal') return;
+        console.log("樹木完全康復，盛開梅花！");
+        
+        // 讓整棵樹符合條件的地方都長花 (恢復原始花量)
+        for (let n of nodes) {
+            // 排除樹幹、排除枯枝(雖然理論上沒了)、排除已經有花的地方
+            if (!n.isTrunk && !n.isWithered && !n.hasFlower) {
+                // 機率性長花 (模擬原始花量，約 30%~40% 的枝條長花)
+                if (random() < 0.4) {
+                    n.hasFlower = true;
+                    n.flowerSize = 0; // 從 0 開始長大 (動畫效果)
+                    n.targetFlowerSize = random(12, 18);
+                    n.flowerOffset = p5.Vector.random2D().mult(random(2, 5));
+                }
+            }
+        }
+    }
+}
+// --- 遺失的傷口類別 (補回這個才能滴血) ---
+class ActiveWound {
+    constructor(parentNode, isSurface = false) {
+        this.parentNode = parentNode;
+        this.pos = parentNode.pos.copy();
+        this.length = 0; 
+        this.threshold = random(15, 25); 
+        this.isSurface = isSurface; // 標記：是否為流膠造成的表面傷口
+    }
+}
+// --- 樹枝滲血 ---
+function updateWounds() {
+    for (let i = activeWounds.length - 1; i >= 0; i--) {
+        let w = activeWounds[i];
+        
+        // 如果節點不見了，移除傷口
+        if (!nodes.includes(w.parentNode)) {
+            activeWounds.splice(i, 1);
+            continue;
+        }
+        w.pos.set(w.parentNode.pos);
+
+        // 修正：定義統一的「血流起始高度」
+        // 表面傷口(流膠)：從圓形底部(半徑約4~5)開始流 -> 設定為 +8 確保在邊緣
+        // 斷肢傷口：從樹枝中心開始流 -> +0
+        let flowStartY = w.isSurface ? (w.pos.y + 8) : w.pos.y;
+
+        // 產生血滴動畫
+        if (w.length < w.threshold) {
+            w.length += 0.15; 
+        } else {
+            // 使用 flowStartY 計算血滴位置，確保它從血柱的最末端產生
+            // +5 是為了讓血滴中心稍微往下，不要跟血柱重疊太多
+            let drop = new ViscousDrip(w.pos.x, flowStartY + w.length + 5); 
+            drop.vel = createVector(0, 0.5); 
+            drop.len = 5; 
+            treeBlood.push(drop);
+            w.length = 2.0; 
+            w.threshold = random(15, 25); 
+        }
+
+        // 繪製傷口
+        if (!w.isSurface) {
+            // A. 斷肢傷口 (修剪造成)
+            noStroke();
+            fill(CONFIG.viscousBloodColor);
+            let topW = w.parentNode.thickness * 0.8;
+            if (topW > 8) topW = 8;
+            let bottomW = 2 + (w.length / w.threshold) * 3; 
+            
+            beginShape();
+            vertex(w.pos.x - topW/2, w.pos.y);
+            vertex(w.pos.x + topW/2, w.pos.y);
+            vertex(w.pos.x + bottomW/2, w.pos.y + w.length);
+            curveVertex(w.pos.x, w.pos.y + w.length + 2);
+            vertex(w.pos.x - bottomW/2, w.pos.y + w.length);
+            endShape(CLOSE);
+            ellipse(w.pos.x, w.pos.y + w.length, bottomW, bottomW);
+        } else {
+            // B. 表面傷口 (流膠造成)
+            noStroke();
+            fill(CONFIG.viscousBloodColor); // 暗紅色
+            
+            let bloodW = 6; // 血流寬度
+            
+            // 1. 畫出傷口源頭 (圓形，半徑約4)
+            // 畫在原始位置 w.pos.y
+            circle(w.pos.x, w.pos.y, 8); 
+            
+            // 2. 畫出流下來的血柱 (長方形)
+            // 嚴格從 flowStartY 開始畫，確保視覺上是從圓形邊緣流出
+            rectMode(CORNER);
+            rect(w.pos.x - bloodW / 2, flowStartY, bloodW, w.length);
+            
+            // 3. 畫出底部的圓頭 (讓血流尾端圓潤)
+            circle(w.pos.x, flowStartY + w.length, bloodW);
+        }
+    }
+}
+// --- 1. 修剪噴濺血 ---
+class BloodSpray {
+    constructor(x, y) {
+        this.pos = createVector(x, y);
+        this.vel = createVector(random(-2, 2), random(-3, -1)); 
+        this.size = random(4, 7);
+        this.alpha = 230;
+    }
+    update() {
+        this.vel.y += 0.2; 
+        this.pos.add(this.vel);
+        
+        if (this.pos.y > height * CONFIG.tableHeightRatio) {
+            this.vel.mult(0.5);
+            this.alpha -= 2.0; 
+        }
+    }
+    display() {
+        if (this.alpha > 0) {
+            noStroke();
+            fill(CONFIG.bloodSprayColor[0], CONFIG.bloodSprayColor[1], CONFIG.bloodSprayColor[2], this.alpha);
+            circle(this.pos.x, this.pos.y, this.size);
+        }
+    }
+    isDead() { return this.alpha <= 0; }
+}
+// === 新增：魔法修復粒子 (Magic Particles) ===
+class MagicParticle {
+    constructor(pos, type) {
+        this.pos = pos.copy();
+        this.vel = p5.Vector.random2D().mult(random(1, 3));
+        this.type = type;
+        this.life = 255;
+        this.size = random(4, 8);
+    }
+    update() {
+        this.pos.add(this.vel);
+        this.vel.mult(0.95);
+        this.vel.y -= 0.05;
+        this.life -= 5;
+    }
+   display() {
+        noStroke();
+        if (this.type === 'gold') fill(255, 215, 0, this.life);
+        else if (this.type === 'qi') fill(180, 20, 20, this.life);
+        else if (this.type === 'green') fill(61, 138, 61, this.life);
+        else if (this.type === 'dust') fill(150, 150, 150, this.life); 
+        circle(this.pos.x, this.pos.y, this.size);
+    }
+    isDead() { return this.life <= 0; }
+}
+// 產生粒子的輔助函數
+function createMagic(pos, type) {
+    // 一次產生 15 顆粒子
+    for(let i=0; i<15; i++) {
+        magicParticles.push(new MagicParticle(pos, type));
+    }
+}
+// --- 2. 滲血拉絲 ---
+class ViscousDrip {
+    constructor(x, y) {
+        this.pos = createVector(x, y);
+        this.vel = createVector(random(-0.1, 0.1), random(0, 0.5)); 
+        this.width = random(3, 5); 
+        this.len = random(5, 10);
+        this.alpha = 240;
+        this.color = color(CONFIG.viscousBloodColor);
+        this.growthRate = random(0.05, 0.15);
+        this.landedTimer = 60; 
+    }
+    update() {
+        if (this.pos.y < height * CONFIG.tableHeightRatio) {
+            this.vel.y += 0.05; 
+            this.pos.add(this.vel);
+            this.len += this.vel.y + this.growthRate; 
+        } else {
+            if (this.landedTimer > 0) {
+                this.landedTimer--;
+            } else {
+                this.alpha -= 15; 
+            }
+        }
+    }
+    display() {
+        if (this.alpha > 0) {
+            noStroke();
+            this.color.setAlpha(this.alpha);
+            fill(this.color);
+            rectMode(CENTER);
+            rect(this.pos.x, this.pos.y, this.width, this.len, 3);
+            rectMode(CORNER);
+        }
+    }
+    isDead() { return this.alpha <= 0; }
+}
+
+// --- 3. UI 顆粒血滴 ---
+class UIBloodParticle {
+    constructor(x, y) {
+        this.pos = createVector(x, y);
+        this.vel = createVector(random(-0.5, 0.5), random(1, 3)); 
+        this.size = random(3, 6);
+        this.alpha = 255;
+    }
+    update() {
+        this.vel.y += 0.2; 
+        this.pos.add(this.vel);
+        this.alpha -= 2.0; 
+    }
+    display() {
+        noStroke();
+        fill(180, 20, 20, this.alpha); 
+        circle(this.pos.x, this.pos.y, this.size);
+    }
+    isDead() { return this.alpha <= 0; }
+}
+
+function updateAndDrawUIParticles() {
+    let barH = 6; 
+    if (vitality < prevVitality) {
+        let diff = prevVitality - vitality;
+        let currentW = map(vitality, 0, 100, 0, width);
+        let bleedX = currentW;
+        let bleedY = barH; 
+        let count = ceil(diff * 3); 
+        if (count < 1) count = 1;
+        for(let i=0; i<count; i++) {
+            uiBloodParticles.push(new UIBloodParticle(bleedX, bleedY));
+        }
+    }
+    prevVitality = vitality;
+    for (let i = uiBloodParticles.length - 1; i >= 0; i--) {
+        let p = uiBloodParticles[i];
+        p.update();
+        p.display();
+        if (p.isDead()) {
+            uiBloodParticles.splice(i, 1);
+        }
+    }
+}
+
+// --- 5. 掉落的介殼蟲 (新增) ---
+class FallingInsect {
+    constructor(pos) {
+        this.pos = pos.copy();
+        this.vel = createVector(random(-1, 1), random(-1, -2)); // 往上彈一下
+        this.acc = createVector(0, 0.2); // 重力
+        this.angle = random(TWO_PI);
+        this.rotSpeed = random(-0.2, 0.2);
+        this.alpha = 255;
+    }
+    update() {
+        this.vel.add(this.acc);
+        this.pos.add(this.vel);
+        this.angle += this.rotSpeed;
+        
+        if (this.pos.y > height) this.alpha = 0; // 掉出畫面
+    }
+    display() {
+        if (this.alpha <= 0) return;
+        push();
+        translate(this.pos.x, this.pos.y);
+        rotate(this.angle);
+        noStroke();
+        fill(240, 240, 245); // 白色的蟲
+        ellipse(0, 0, 4, 5);
+        pop();
+    }
+    isDead() { return this.alpha <= 0; }
+}
+
+// --- 凋零落花 (死亡特效) ---
+class FallingFlower {
+    constructor(x, y, size) {
+        this.pos = createVector(x, y);
+        this.vel = createVector(random(-1, 1), random(0, 1.5)); // 緩緩飄落
+        this.size = size;
+        this.alpha = 255;
+        this.angle = random(TWO_PI);
+        this.rotSpeed = random(-0.05, 0.05);
+    }
+    update() {
+        this.vel.y += 0.05; 
+        this.pos.add(this.vel);
+        this.angle += this.rotSpeed;
+        if (this.pos.y > height * CONFIG.tableHeightRatio) {
+            this.vel.mult(0); // 碰到桌面停止
+            this.alpha -= 3;  // 漸漸化為塵土消失
+        }
+    }
+    display() {
+        if (this.alpha > 0) {
+            push();
+            translate(this.pos.x, this.pos.y);
+            rotate(this.angle);
+            drawFlowerVisual(0, 0, this.size, this.alpha);
+            pop();
+        }
+    }
+    isDead() { return this.alpha <= 0; }
+}
+
+function drawVitalityBarOnly() {
+    let barH = 6;
+    noStroke();
+    fill(60, 50, 40, 50); 
+    rect(0, 0, width, barH);
+    if (vitality > 0) {
+        fill(160, 40, 30, 220);
+        let w = map(vitality, 0, 100, 0, width);
+        rect(0, 0, w, barH);
+    }
+    // ★ 修改：讓生命值文字變得超級明顯 (純白 + 強烈陰影)
+    drawingContext.shadowColor = 'rgba(0,0,0,0.9)'; // 深黑色陰影
+    drawingContext.shadowBlur = 6;                  // 陰影擴散範圍
+    drawingContext.shadowOffsetX = 1;
+    drawingContext.shadowOffsetY = 1;
+    
+    fill(255, 255, 255, 255); // 純白字體
+    textAlign(LEFT, TOP);
+    textSize(22);             // 字體再放大到 22
+    textStyle(BOLD);          // 粗體
+    text("生命值", 12, barH + 12); // 微調位置
+    
+    // 畫完後重置陰影與字體，避免影響遊戲其他畫面
+    drawingContext.shadowBlur = 0;
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    textStyle(NORMAL);        
+}
+
+function drawTable() {
+    let tableY = height * CONFIG.tableHeightRatio;
+    stroke(80, 70, 60, 80);
+    strokeWeight(1.5);
+    line(0, tableY, width, tableY);
+}
+
+function drawPot() {
+    let tableY = height * CONFIG.tableHeightRatio;
+    let bx = basePos.x;
+    let by = basePos.y; 
+    let potTopW = 125;
+    let potBottomW = 95;
+    let rimH = 20;
+    noStroke();
+    fill(CONFIG.potColor);
+    beginShape();
+    let rimY = by - rimH; 
+    vertex(bx - potTopW, rimY);
+    vertex(bx + potTopW, rimY);
+    vertex(bx + potBottomW, tableY);
+    vertex(bx - potBottomW, tableY);
+    endShape(CLOSE);
+    fill(40, 30, 25, 80);
+    ellipse(bx, rimY, potTopW * 2, 12);
+}
+
+// --- 繪製真實木紋 (擬人呼吸版) + 骨折變色 + 痙攣效果 ---
+function drawTree(node) {
+    if (!node) return;
+    
+    // 呼吸計算 (死掉就不呼吸)
+    let breathCycle = (Math.sin(frameCount * 0.03) + 1) * 0.5; 
+    if (isDead) breathCycle = 0; 
+    
+    function getBreathOffset(n) {
+        if (!n.parent) return createVector(0, 0); 
+        let distFromRoot = p5.Vector.dist(n.pos, rootNode.pos);
+        let affectFactor = constrain(distFromRoot / 200, 0, 1.2); 
+        let offsetY = -3.5 * breathCycle * affectFactor * affectFactor; 
+        let offsetX = (n.pos.x - basePos.x) * 0.005 * breathCycle;
+        return createVector(offsetX, offsetY);
+    }
+
+    if (node.parent) {
+        let parentOffset = getBreathOffset(node.parent);
+        let nodeOffset = getBreathOffset(node);
+        let visualPPos = p5.Vector.add(node.parent.pos, parentOffset);
+        let visualCPos = p5.Vector.add(node.pos, nodeOffset);
+
+        // 痙攣計算
+        if (node.trauma > 0) {
+            let shakeAmount = node.trauma * 2.5; 
+            visualCPos.add(random(-shakeAmount, shakeAmount), random(-shakeAmount, shakeAmount));
+        }
+
+        // --- 1. 決定樹枝顏色 (枯枝 vs 健康) ---
+        let baseC;
+        if (node.isWithered) {
+            baseC = color(...CONFIG.witheredColor); // 枯枝色 (灰白)
+        } else {
+            baseC = color(...CONFIG.woodColor);     // 健康木色
+        }
+        
+        let boneC = color(240, 240, 230); 
+        let currentStroke = lerpColor(baseC, boneC, painIntensity);
+        if (node.isHovered) {
+            currentStroke = color(200, 30, 30); // 鮮紅色
+        }
+
+        // 繪製樹枝本體
+        stroke(currentStroke);
+        strokeWeight(node.thickness); 
+        noFill();
+        strokeCap(ROUND); 
+        line(visualPPos.x, visualPPos.y, visualCPos.x, visualCPos.y);
+        
+        // --- 2. 繪製木紋 (枯枝時減少紋理) ---
+        let grainBase;
+        if (node.isWithered) {
+             grainBase = color(140, 135, 130); // 枯枝紋理較淡
+        } else {
+             grainBase = color(...CONFIG.woodGrainColor);
+        }
+        let grainBone = color(180, 180, 170); 
+        let currentGrain = lerpColor(grainBase, grainBone, painIntensity);
+
+        let grainCount = ceil(node.thickness / 2.5); 
+        if(grainCount < 2) grainCount = 2; 
+        
+        push();
+        stroke(currentGrain);
+        noFill();
+        
+        let dir = p5.Vector.sub(visualCPos, visualPPos);
+        let angle = dir.heading();
+        
+        let perpX = cos(angle + PI/2);
+        let perpY = sin(angle + PI/2);
+        
+        for(let k=0; k<grainCount; k++) {
+            strokeWeight(random(0.5, 1.2));
+            let tNorm = map(k, 0, grainCount-1, -0.4, 0.4); 
+            let baseOffset = tNorm * node.thickness;
+            beginShape();
+            let steps = 4; 
+            for(let t=0; t<=1; t+=1/steps) {
+                let px = lerp(visualPPos.x, visualCPos.x, t);
+                let py = lerp(visualPPos.y, visualCPos.y, t);
+                let n = noise(node.seed + k * 10, t * 2); 
+                let wiggle = map(n, 0, 1, -1.5, 1.5);
+                let finalOffsetX = perpX * (baseOffset + wiggle);
+                let finalOffsetY = perpY * (baseOffset + wiggle);
+                vertex(px + finalOffsetX, py + finalOffsetY);
+            }
+            endShape();
+        }
+
+// 3. 滲血傷口 (取代原本的黑洞) ---
+        if (node.hasHole && !node.isHealed) {
+            let hSize = node.thickness * 1.3; 
+            if (hSize < 7) hSize = 7;
+            
+            push();
+            translate(visualCPos.x, visualCPos.y);
+            
+            // A. 鮮紅底色 (受傷肉色)
+            fill(160, 20, 20); 
+            noStroke();
+            // 畫稍微不規則的血痕
+            beginShape();
+            for(let i=0; i<TWO_PI; i+=0.5) {
+                let r = hSize * 0.5 + noise(node.seed + i)*3;
+                vertex(cos(i)*r, sin(i)*r);
+            }
+            endShape(CLOSE);
+            
+            // B. 血液濕潤感 (高光)
+            fill(255, 100, 100, 150);
+            ellipse(0, -hSize * 0.2, hSize * 0.6, hSize * 0.4);
+
+            // C. 傷口邊緣 (發炎紅腫)
+            noFill();
+            stroke(100, 0, 0, 100); 
+            strokeWeight(1);
+            ellipse(0, 0, hSize, hSize * 0.9);
+            pop();
+        }
+        // --- 4.繪製金繕修復 (Healed) ---
+        if (node.isHealed) {
+            let hSize = node.thickness * 1.5;
+            if (hSize < 5) hSize = 5;
+
+            push();
+            translate(visualCPos.x, visualCPos.y);
+            
+          // 修改：使用按鈕的金色 #c5a059 (RGB: 197, 160, 89)
+            fill(197, 160, 89); 
+            noStroke();
+            ellipse(0, 0, hSize, hSize * 0.8);
+            
+            // 高光 (稍微亮一點)
+            fill(227, 190, 119, 180);
+            ellipse(-hSize*0.2, -hSize*0.2, hSize*0.3, hSize*0.3);
+            
+            // 邊框
+            noFill();
+            stroke(167, 130, 59);
+            strokeWeight(1);
+            ellipse(0, 0, hSize, hSize * 0.8);
+            pop();
+        }
+
+// ★★★ 新增：4.5 繪製運氣止血的血痂 (Scabbed) ★★★
+        if (node.isScabbed) {
+            let hSize = node.thickness * 1.4;
+            if (hSize < 5) hSize = 5;
+
+            push();
+            translate(visualCPos.x, visualCPos.y);
+            
+            // 介於深紅與咖啡色的底色
+            fill(70, 25, 20); 
+            noStroke();
+            
+            // 畫出稍微不規則的血痂邊緣
+            beginShape();
+            for(let i=0; i<TWO_PI; i+=0.5) {
+                let r = hSize * 0.45 + noise(node.seed + i * 2) * 2;
+                vertex(cos(i)*r, sin(i)*r);
+            }
+            endShape(CLOSE);
+            
+            // 痂的暗部與乾涸感
+            fill(40, 10, 10, 200);
+            ellipse(-hSize*0.1, 0, hSize*0.5, hSize*0.4);
+            
+            // 邊緣痕跡
+            noFill();
+            stroke(50, 15, 10);
+            strokeWeight(1);
+            ellipse(0, 0, hSize, hSize * 0.85);
+            pop();
+        }
+
+        // --- 3. 繪製病徵：介殼蟲 (Scale Insects) ---
+        if (node.insects && node.insects.length > 0) {
+            noStroke();
+            fill(...CONFIG.scaleColor); // 白色
+            for (let bug of node.insects) {
+                if (!bug.active) continue; // 擦掉的就不畫
+                
+                // 計算蟲的位置 (在樹枝路徑上插值)
+                let bugX = lerp(visualPPos.x, visualCPos.x, bug.relPos);
+                let bugY = lerp(visualPPos.y, visualCPos.y, bug.relPos);
+                
+                // 加上偏移 (黏在樹皮表面)
+                bugX += perpX * bug.offset;
+                bugY += perpY * bug.offset;
+                
+                push();
+                translate(bugX, bugY);
+                rotate(angle);
+                ellipse(0, 0, 3, 4); // 畫出白色橢圓小蟲
+                pop();
+            }
+        }
+
+     // 6. 流膠病 (至少3顆 + 高光) ---
+        if (node.hasGum) {
+            noStroke();
+            let c = color(...CONFIG.gumColor);
+            c.setAlpha(240); // 濃稠不透明
+            
+            push();
+            translate(visualCPos.x, visualCPos.y); 
+
+            // 畫 6 顆明顯的膠球，圍繞在樹枝周圍
+            for(let g=0; g<6; g++) {
+                // 使用 noise 讓每顆位置固定
+                let gSeed = node.seed + g * 50;
+                
+                // 角度分佈：讓膠球黏在樹枝的不同方位
+                let angleOffset = map(noise(gSeed), 0, 1, -PI, PI);
+                
+                // 距離中心的距離 (稍微凸出樹枝表面)
+                let distOffset = node.thickness * 0.6 + map(noise(gSeed + 10), 0, 1, 0, 5);
+                
+                // 膠球大小 (顆顆分明)
+                let gSize = map(noise(gSeed + 20), 0, 1, 6, 20);
+
+                let gx = cos(angleOffset) * distOffset;
+                let gy = sin(angleOffset) * distOffset + 2; // 稍微受重力下垂
+
+                // 畫膠球本體
+                fill(c);
+                circle(gx, gy, gSize);
+
+                // 畫膠球的高光 (讓它看起來像立體珠子)
+                // 亮點在左上方
+                fill(255, 255, 255, 180); 
+                circle(gx - gSize * 0.25, gy - gSize * 0.25, gSize * 0.3);
+            }
+            pop();
+        }
+
+        // --- 樹結 (原本的裝飾) ---
+        if (node.hasKnot) {
+            strokeWeight(1);
+            let knotCenter = p5.Vector.lerp(visualPPos, visualCPos, 0.5); 
+            let kn = noise(node.seed);
+            knotCenter.x += perpX * (kn - 0.5) * node.thickness * 0.5;
+            knotCenter.y += perpY * (kn - 0.5) * node.thickness * 0.5;
+            for(let r=1; r<node.thickness*0.6; r+=2) {
+                let kr = r + random(-1, 1); 
+                push();
+                translate(knotCenter.x, knotCenter.y);
+                rotate(angle);
+                ellipse(0, 0, kr * 1.5, kr * 0.8);
+                pop();
+            }
+        }
+        
+        pop();
+
+        // 關節 (如果枯枝，關節也要變色)
+        noStroke();
+        fill(currentStroke); 
+        let jointSize = node.thickness * 0.95;
+        circle(visualCPos.x, visualCPos.y, jointSize);
+        
+        fill(currentGrain);
+        circle(visualCPos.x, visualCPos.y, jointSize * 0.3); 
+    }
+    
+    // --- 繪製花朵 (只有沒病時才畫) ---
+    // (注意：initBonsai 已經控制了 hasFlower，這裡只需負責畫)
+    if (node.hasFlower) {
+        if (node.flowerSize < (node.targetFlowerSize || 15)) {
+            node.flowerSize += 0.2;
+        }
+        
+        let nodeOffset = getBreathOffset(node);
+        let visualPos = p5.Vector.add(node.pos, nodeOffset);
+        if (node.trauma > 0) {
+            let shakeAmount = node.trauma * 2.5;
+            visualPos.add(random(-shakeAmount, shakeAmount), random(-shakeAmount, shakeAmount));
+        }
+        drawFlowerVisual(visualPos.x + node.flowerOffset.x, visualPos.y + node.flowerOffset.y, node.flowerSize, 255);
+    }
+    
+    // 互動提示點
+    if (!isDead) {
+        let rimY = basePos.y - 15;
+        let isToolMode = (currentTool === 'cut' || currentTool === 'bend');
+        
+        if (node.pos.y < rimY && dist(mouseX, mouseY, node.pos.x, node.pos.y) < 20 && node.parent) {
+            let showHint = false;
+            if (isToolMode && !node.isTrunk) showHint = true;
+            if (!isToolMode) showHint = true;
+
+            // 枯枝不顯示互動點 (除了修剪模式)
+            if (node.isWithered && currentTool !== 'cut') showHint = false;
+
+            if (showHint) {
+                let nodeOffset = getBreathOffset(node);
+                let visualPos = p5.Vector.add(node.pos, nodeOffset);
+                noStroke();
+                let r = node.thickness < 5 ? 6 : 10;
+                fill(80, 80, 80, 50); 
+                circle(visualPos.x, visualPos.y, r);
+            }
+        }
+    }
+    
+    for (let child of node.children) {
+        drawTree(child);
+    }
+}
+function drawFlowerVisual(x, y, s, alpha) {
+    push();
+    translate(x, y);
+    noStroke();
+    let fc = color(CONFIG.flowerColor);
+    fc.setAlpha(alpha);
+    fill(fc);
+    let r = s * 0.6;
+    for(let i=0; i<5; i++){
+        let a = -PI/2 + i * TWO_PI / 5;
+        circle(cos(a)*r, sin(a)*r, s * 0.85);
+    }
+    let cc = color(CONFIG.flowerCenter);
+    cc.setAlpha(alpha);
+    fill(cc);
+    noStroke();
+    circle(0, 0, s * 0.35);
+    pop();
+}
+
+function setMode(mode) {
+    const cursorVisual = document.getElementById('cursor-visual');
+    if (mode === 'cut') {
+        isCuttingMode = true;
+        document.getElementById('btn-cut').classList.add('active');
+        document.getElementById('btn-bend').classList.remove('active');
+        cursorVisual.className = 'cursor-scissors';
+        cursorVisual.innerHTML = SCISSORS_SVG;
+    } else {
+        isCuttingMode = false;
+        document.getElementById('btn-bend').classList.add('active');
+        document.getElementById('btn-cut').classList.remove('active');
+        cursorVisual.className = 'cursor-dot';
+        cursorVisual.innerHTML = '';
+    }
+}
+
+function submitBonsai() {
+    console.log("Submit clicked");
+}
+
+class Node {
+    constructor(pos, parent, thickness) {
+        
+        this.pos = pos;
+        this.parent = parent;
+        this.children = [];
+        this.thickness = thickness;
+        
+        this.restLength = parent ? p5.Vector.dist(pos, parent.pos) : 0;
+        this.isTrunk = false;
+        this.seed = random(10000); 
+        this.trauma = 0; 
+
+        // --- 狀態標記 ---
+        // 1. 花朵 (健康時才有)
+        this.hasFlower = false;
+        this.flowerSize = 0;
+        this.flowerOffset = createVector(0,0);
+        
+        // 2. 樹結 (裝飾用)
+        this.hasKnot = false;
+
+        // --- 病徵資料 ---
+        // A. 介殼蟲 (Scale Insects)
+        this.insects = []; // 存放每隻蟲的位置 {x, y, active}
+
+        // B. 流膠病 (Gummosis)
+        this.hasGum = false;    // 是否有流膠
+        this.gumHealth = 100;   // 膠的厚度 (刷掉用)
+        this.hasHole = false;   // 膠刷掉後剩下的洞
+        this.isHealed = false;  // 金繕修復後的狀態
+        this.isScabbed = false; // ★ 新增：運氣止血後的血痂狀態
+
+        // C. 枯枝 (Withered)
+        this.isWithered = false; // 是否為死枝
+        this.isHovered = false;
+    }
+}
+// 修復版：根據 currentTool 執行對應動作
+// 修復版：剪刀必須點根部 + 修剪完開花
+function mousePressed() {
+if (!canInteractTree) return;
+    if (vitality <= 0) return;
+    
+    // 1. 先計算通用的 closest (給金繕藥、運氣、彎曲、毛刷用)
+    let closest = null;
+    let minDist = 50; 
+    
+    for (let n of nodes) {
+        if (n.pos.y > height * CONFIG.tableHeightRatio) continue;
+        let d = dist(mouseX, mouseY, n.pos.x, n.pos.y);
+        if (d < minDist) { minDist = d; closest = n; }
+    }
+
+    // --- 工具行為分流 ---
+
+    // A. 修剪 (Cut)：優先使用懸停偵測的結果 (hoverTarget)
+    if (currentTool === 'cut') {
+        if (hoverTarget) {
+            amputate(hoverTarget);
+        }
+        return; // 剪完就結束，不觸發其他判定
+    }
+
+    // B. 其他工具 (需要 closest)
+    if (closest) {
+        // 1. 金繕藥
+        if (currentTool === 'medicine') {
+            if (medicineUses > 0) {
+                let bleedingIndex = activeWounds.findIndex(w => w.parentNode === closest);
+                let isBleeding = (bleedingIndex !== -1);
+
+                if (closest.hasHole || isBleeding) {
+                    closest.hasHole = false;
+                    if (isBleeding) { activeWounds.splice(bleedingIndex, 1); }
+                    for(let i = activeWounds.length - 1; i >= 0; i--){
+                        if(activeWounds[i].parentNode === closest) activeWounds.splice(i, 1);
+                    }
+
+                    closest.isHealed = true;
+                    // ★ 已經移除使用金繕藥時增加陰德的設定
+                    createMagic(closest.pos, 'gold'); 
+                    playMagicSound();
+                    console.log("傷口已金繕修復");
+                    
+                    medicineUses--;
+                    updateMedicineBtnUI();
+                    updateStatusUI();
+                    checkRecovery();
+                    
+                    if (medicineUses <= 0) {
+                        setTool('bend'); 
+                    }
+                } 
+            } else {
+                tryUseMedicine();
+            }
+        }
+       // 2. 運氣
+        else if (currentTool === 'qi') {
+            let bleedingIndex = activeWounds.findIndex(w => w.parentNode === closest);
+            let isBleeding = (bleedingIndex !== -1);
+
+            // 只有在有洞或流血時，才允許運氣並跳出視窗
+            if (closest.hasHole || isBleeding) {
+                qiTargetNode = closest; // 記錄目標節點
+                document.getElementById('modal-qi').style.display = 'flex'; // 顯示視窗
+            } else {
+                console.log("此處無傷口，無法運氣"); // 點健康的地方什麼都不做
+            }
+        }
+        // 3. 毛刷 (點擊效果，拖曳在 mouseDragged)
+        else if (currentTool === 'brush') {
+             createMagic(closest.pos, 'green'); 
+        }
+        // 4. 彎曲 (Bend)
+        else if (currentTool === 'bend') {
+            if (closest.parent && !closest.isTrunk) {
+                draggedNode = closest;
+            }
+        }
+    }
+}
+function mouseDragged() {
+if (!canInteractTree) return;
+    if (vitality <= 0) return;
+
+    // A. 毛刷工具：治療模式 (刷蟲、刷膠)
+    if (currentTool === 'brush') {
+        // 計算滑鼠移動速度 (摩擦力)
+        let dragSpeed = dist(mouseX, mouseY, pmouseX, pmouseY);
+        if (dragSpeed < 1) {
+            sndBrush.pause(); // ★ 新增：滑鼠停下時停止刷聲
+            return; 
+        }
+        playBrushSound(); // ★ 新增：發出毛刷聲
+
+        for (let n of nodes) {
+            if (n.pos.y > height * CONFIG.tableHeightRatio) continue;
+            if (!n.parent) continue;
+
+            // 1. 刷除介殼蟲 (Scale Insects)
+            // 蟲子是長在樹枝路徑上的，我們計算滑鼠是否碰到蟲子
+            if (n.insects.length > 0) {
+                for (let i = n.insects.length - 1; i >= 0; i--) {
+                    let bug = n.insects[i];
+                    if (!bug.active) continue;
+
+                    // 計算蟲的世界座標
+                    let bugWorldPos = p5.Vector.lerp(n.parent.pos, n.pos, bug.relPos);
+                    
+                    // 如果毛刷刷過蟲子 (距離小於 15)
+                    if (dist(mouseX, mouseY, bugWorldPos.x, bugWorldPos.y) < 15) {
+                        // 移除蟲子
+                        n.insects.splice(i, 1);
+                        // 產生掉落動畫
+                        fallingInsects.push(new FallingInsect(bugWorldPos));
+                        // 產生一點點綠色特效
+                        if (random() < 0.3) createMagic(bugWorldPos, 'green');
+
+                        
+                        // 檢查痊癒
+                        checkRecovery();
+                    }
+                }
+            }
+
+           // 2. 刷除流膠 -> 變成持續滲血的傷口
+            if (n.hasGum) {
+                if (dist(mouseX, mouseY, n.pos.x, n.pos.y) < 25) {
+                    n.gumHealth -= 5; 
+                    if (n.gumHealth <= 0) {
+                        n.hasGum = false; 
+                        n.hasHole = true; 
+                        
+                        // 關鍵：加入一個持續滴血的傷口物件 (true 代表是表面傷口)
+                        activeWounds.push(new ActiveWound(n, true));
+                        
+                        createMagic(n.pos, 'green'); 
+                        console.log("流膠已刷除，開始滲血");
+                    }
+                }
+            }
+        }
+    }
+    
+    // B. 彎曲工具：物理模式
+    else if (currentTool === 'bend' && draggedNode) {
+        vitality -= CONFIG.bendCost;
+        treeBentAmount++; // ★ 新增：只要滑鼠有拖曳彎曲，就增加彎曲度
+        let tx = mouseX; 
+        let ty = constrain(mouseY, CONFIG.topBarrier, height * CONFIG.tableHeightRatio);
+        let target = createVector(tx, ty);
+        draggedNode.pos.lerp(target, CONFIG.dragResistance);
+        
+        let dragSpeed = dist(mouseX, mouseY, pmouseX, pmouseY);
+        if (dragSpeed > 2.5) {
+            painIntensity = constrain(painIntensity + 0.25, 0, 1.0);
+            playBendSound();
+        } else {
+            sndBend.pause(); // ★ 新增：滑鼠沒用力拖曳時停止木頭聲
+        }
+        for(let k=0; k<10; k++) resolveConstraints(rootNode);
+    }
+}function mouseReleased() {
+if (!canInteractTree) return;
+    if (draggedNode) {
+        draggedNode.trauma = 1.0; 
+        if (draggedNode.parent) draggedNode.parent.trauma = 0.5;
+    }
+    draggedNode = null; 
+stopActionSounds();
+}
+
+// [修改] 剛性距離約束
+function resolveConstraints(node) {
+    if (!node) return;
+    if (node === rootNode) {
+        node.pos.set(basePos);
+    }
+    if (node.parent) {
+        let dir = p5.Vector.sub(node.pos, node.parent.pos);
+        let currentLen = dir.mag();
+        let targetLen = node.restLength;
+        
+        if (currentLen === 0) {
+            dir = p5.Vector.random2D();
+            currentLen = 1;
+        }
+
+        let diff = (currentLen - targetLen) / currentLen;
+        let correction = p5.Vector.mult(dir, diff);
+
+        if (node === draggedNode) {
+            node.parent.pos.add(correction);
+        } else if (node.parent === rootNode) {
+            node.pos.sub(correction);
+        } else if (node.parent === draggedNode) {
+             node.pos.sub(correction);
+        } else {
+            correction.mult(0.5);
+            node.pos.sub(correction);
+            node.parent.pos.add(correction);
+        }
+
+        if (node !== rootNode && node.parent !== rootNode) {
+             node.pos.y = constrain(node.pos.y, CONFIG.topBarrier, height * CONFIG.tableHeightRatio);
+        }
+    }
+    for (let child of node.children) { resolveConstraints(child); }
+}
+
+// --- 修剪邏輯 (修正判定順序版) ---
+function amputate(target) {
+    if (target.isTrunk) return;
+playCutSound();
+    // 判斷是否為枯枝
+    if (target.isWithered) {
+        // 枯枝切除：不扣血，不痛，也不噴血
+        console.log("切除病枯枝 (不消耗生命)");
+        
+        // 產生灰色粉塵特效
+        for(let i=0; i<5; i++) {
+            let dust = new MagicParticle(target.pos, 'dust'); 
+            dust.type = 'dust'; 
+            dust.vel = createVector(random(-1, 1), random(-1, 1));
+            magicParticles.push(dust);
+        }
+        
+        // 注意：這裡先不檢查 checkRecovery，因為樹枝還沒從陣列移除
+    } else {
+        // 健康枝切除：扣血、噴血、痛
+        vitality -= CONFIG.cutCost;
+        painIntensity = min(1.0, painIntensity + 0.3);
+        
+        // 產生噴血特效
+        for(let i=0; i<8; i++) {
+            treeBlood.push(new BloodSpray(target.pos.x, target.pos.y));
+        }
+        
+        // 產生斷面傷口
+        if (target.parent) {
+            activeWounds.push(new ActiveWound(target.parent));
+        }
+    }
+
+    // 斷肢掉落邏輯
+    let limb = new FallingLimb(target);
+    fallingLimbs.push(limb);
+    
+    // 從父節點的子列表中移除
+    if (target.parent) {
+        let idx = target.parent.children.indexOf(target);
+        if (idx > -1) target.parent.children.splice(idx, 1);
+    }
+    
+    // ★ 關鍵修正：先徹底移除資料結構
+    removeSubtree(target);
+    
+    // ★ 新增：檢查老兵的枯枝是否已經全部剪完
+    if (currentScenario === 'withered') {
+        let hasWitheredLeft = false;
+        for (let n of nodes) {
+            if (n.isWithered) hasWitheredLeft = true;
+        }
+        
+        // 如果枯枝全沒了，就讓隱藏的舊傷口裂開顯現！
+        if (!hasWitheredLeft) {
+            for (let n of nodes) {
+                if (n.isHiddenWound) {
+                    n.hasHole = true;       // 傷口正式顯現，現在可以點金繕藥了
+                    n.isHiddenWound = false; // 移除標記，避免重複觸發
+                    
+                    // 噴出鮮血特效，強烈提示玩家舊傷口裂開了！
+                    for(let i=0; i<10; i++) {
+                        treeBlood.push(new BloodSpray(n.pos.x, n.pos.y));
+                    }
+                    console.log("枯枝已盡，巨大舊傷浮現！");
+                }
+            }
+        }
+    }
+    
+    // 檢查是否整棵樹被剪光
+    checkAllBranchesGone();
+    checkRecovery();
+}
+    
+    function checkAllBranchesGone() {
+    let hasBranches = false;
+    for(let n of nodes) {
+        if (!n.isTrunk) {
+            hasBranches = true;
+            break;
+        }
+    }
+    if (!hasBranches) {
+        vitality = 0;
+    }
+}
+
+function removeSubtree(node) {
+    let idx = nodes.indexOf(node);
+    if (idx > -1) nodes.splice(idx, 1);
+    for (let child of node.children) { removeSubtree(child); }
+}
+
+function windowResized() {
+    // ★ 修改 5：縮放視窗時，也只根據右側面板的大小來調整畫布
+    const container = document.getElementById('right-panel');
+    if (container) {
+        resizeCanvas(container.clientWidth, container.clientHeight);
+        basePos = createVector(width / 2, height * CONFIG.tableHeightRatio - 55);
+        createPaperTexture(); // 背景紋理也要重畫，不然會變形
+        // initBonsai(); // (選擇性) 如果縮放時想重置樹木可打開此行，否則樹可能會歪掉
+    }
+}
+</script>
+</body>
+</html>
