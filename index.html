@@ -582,7 +582,7 @@
         
     </div>
 
-<div id="intermediate-screen" style="background: url('背景.PNG') center center / cover no-repeat; background-color: #1a1a1a;">       
+<div id="intermediate-screen" style="background: url('bg.png') center center / cover no-repeat; background-color: #1a1a1a;">       
     <div style="position: relative; text-align: center; width: 100%;">
         <div id="typewriter-text" class="typing-text"></div>
         
@@ -601,7 +601,7 @@
         
         <div id="left-panel">
             <div id="customer-view">
-                <div class="scene-placeholder" style="position: relative; background: url('背景.PNG') center 95% / cover no-repeat; width: 100%; height: 100%;">
+                <div class="scene-placeholder" style="position: relative; background: url('bg.png') center 95% / cover no-repeat; width: 100%; height: 100%;">
                     
                     <img id="customer-image" src="" alt="Customer" style="
                         display: none; 
@@ -892,15 +892,15 @@
 // ==========================================
 // 真實音效引擎 (動態停止版)
 // ==========================================
-const sndCut = new Audio('修剪音效.mp3');
-const sndMagic = new Audio('治癒音效.mp3');
-const sndCoin = new Audio('錢幣音效.mp3');
-const sndBend = new Audio('彎曲音效.mp3');
-const sndBrush = new Audio('毛刷音效.mp3'); 
-const sndPlace = new Audio('放置音效.mp3'); 
-const sndSubmit = new Audio('交付音效.mp3'); 
-const sndClick = new Audio('點擊音效.mp3'); 
-const sndView = new Audio('查看音效.mp3'); // ★ 新增：查看病歷音效
+const sndCut = new Audio('snd_cut.mp3');
+const sndMagic = new Audio('snd_magic.mp3');
+const sndCoin = new Audio('snd_coin.mp3');
+const sndBend = new Audio('snd_bend.mp3');
+const sndBrush = new Audio('snd_brush.mp3'); 
+const sndPlace = new Audio('snd_place.mp3'); 
+const sndSubmit = new Audio('snd_submit.mp3'); 
+const sndClick = new Audio('snd_click.mp3'); 
+const sndView = new Audio('snd_view.mp3');
 
 sndBend.loop = true;
 sndBrush.loop = true;
@@ -1249,7 +1249,7 @@ const STORY_EVENTS = {
         tag: "訪客",
         visual: "official",
         scenario: "normal", // 右側梅樹對應的狀態
-        imageUrl: "圖片.PNG", 
+        imageUrl: "official.png", 
         chats: [
             { speaker: "guest", text: "大夫，這樹太直了，俗不可耐！" },
             { speaker: "player", text: "閣下希望如何處置？" },
@@ -1266,7 +1266,7 @@ const STORY_EVENTS = {
         tag: "求醫",
         visual: "soldier",
         scenario: "withered",
-imageUrl: "老兵.PNG",
+imageUrl: "soldier.png",
         chats: [
             { speaker: "guest", text: "大夫...請您救救它..." },
             { speaker: "player", text: "老人家，這樹滿是枯枝，恐已病入膏肓。" },
@@ -1283,7 +1283,7 @@ imageUrl: "老兵.PNG",
         tag: "求醫",
         visual: "woman",
         scenario: "scale",
-imageUrl: "村婦.PNG",
+imageUrl: "woman.png",
         chats: [
             { speaker: "guest", text: "大夫，求求您...這樹近來被白蟲啃噬，快活不成了。" },
             { speaker: "player", text: "這是生了介殼蟲。此蟲吸食樹汁，任其發展必死無疑。" },
@@ -1300,7 +1300,7 @@ imageUrl: "村婦.PNG",
         tag: "求醫",
         visual: "merchant",
         scenario: "gum",
-imageUrl: "商賈.PNG",
+imageUrl: "merchant.png",
         chats: [
             { speaker: "guest", text: "大夫。這樹...最近一直流出琥珀色的黏液。" },
             { speaker: "player", text: "這是流膠病，多因積鬱成疾、氣血不通所致。" },
